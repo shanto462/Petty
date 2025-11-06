@@ -1,0 +1,20 @@
+{
+  "animations": [],
+  "capabilities": [
+    "AnimatedSprite",
+    "AnimationsProvider",
+    "AutoRespawn",
+    "LinearMovement",
+    "PetsSpritesProvider",
+    "AnimationsScheduler",
+    "Rotating",
+    "WallCrawler"
+  ],
+  "dragPath": "front",
+  "fps": 1,
+  "zIndex": 0,
+  "tags": ["slow motion", "memes"],
+  "id": "snail",
+  "movementPath": "front",
+  "speed": 0.2
+}

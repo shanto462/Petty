@@ -1,0 +1,32 @@
+{
+  "animations": [
+    {
+      "id": "idle",
+      "position": "fromEntityBottomLeft",
+      "requiredLoops": 50
+    },
+    {
+      "id": "front",
+      "position": "fromEntityBottomLeft",
+      "requiredLoops": 5
+    }
+  ],
+  "capabilities": [
+    "AnimatedSprite",
+    "AnimationsProvider",
+    "AutoRespawn",
+    "BounceOnLateralCollisions",
+    "FlipHorizontallyWhenGoingLeft",
+    "LinearMovement",
+    "PetsSpritesProvider",
+    "AnimationsScheduler",
+    "Rotating"
+  ],
+  "dragPath": "drag",
+  "fps": 10,
+  "zIndex": 0,
+  "tags": ["forest"],
+  "id": "mushroom",
+  "movementPath": "walk",
+  "speed": 0.3
+}

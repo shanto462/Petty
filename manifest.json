@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Desktop Pets - Petty",
+  "version": "2.0.0",
+  "description": "40+ animated desktop pets for your browser! Cats, fish, frogs, and more. Drag, drop, and enjoy!",
+  "permissions": ["storage", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "species-manager.js",
+        "sprite-animator.js",
+        "pet.js",
+        "pet-manager.js"
+      ],
+      "css": ["pet.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "Resources/PetsAssets/*.png",
+        "Resources/Species/*.json"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
+

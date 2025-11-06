@@ -1,0 +1,33 @@
+/* Petty - Desktop Pets Extension */
+/* Clean sprite-based rendering */
+
+.petty-pet {
+  position: fixed;
+  pointer-events: auto;
+  user-select: none;
+  cursor: grab;
+}
+
+.petty-pet:active {
+  cursor: grabbing;
+}
+
+.petty-pet.dragging {
+  cursor: grabbing;
+  opacity: 0.95;
+}
+
+.petty-pet img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Flipped sprite for left movement */
+.petty-pet.flipped img {
+  transform: scaleX(-1);
+}
+
