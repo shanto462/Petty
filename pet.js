@@ -28,7 +28,7 @@ class Pet {
     this.direction = 1; // Always start right (like macOS), gets synced from background anyway
     this.isDragging = false;
     this.isGrounded = false;
-    this.currentAnimation = 'front';
+    this.currentAnimation = null; // Start null so first setAnimation actually loads frames
     
     // Capabilities state
     this.isAngry = false;
@@ -98,6 +98,7 @@ class Pet {
   }
   
   async setAnimation(animationId) {
+    console.log('[Pet]', this.speciesId, '🎬 setAnimation called:', animationId);
     if (this.currentAnimation === animationId) return;
     this.currentAnimation = animationId;
     

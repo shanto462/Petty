@@ -88,9 +88,12 @@ class PetCoordinator {
     
     for (const id of speciesList) {
       try {
-        const url = chrome.runtime.getURL(`Resources/Species/${id}.json`);
-        // Add cache busting to force reload of JSON files
-        const response = await fetch(url, { cache: 'no-store' });
+        // Add timestamp to URL to force bypass all caches
+        const url = chrome.runtime.getURL(`Resources/Species/${id}.json`) + '?v=' + Date.now();
+        const response = await fetch(url, { 
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         if (response.ok) {
           this.speciesData[id] = await response.json();
         }

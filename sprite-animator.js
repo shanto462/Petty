@@ -21,6 +21,8 @@ class SpriteAnimator {
       return this.frames[animationId];
     }
     
+    console.log('[SpriteAnimator] 🔄 Loading animation:', this.speciesId, animationId);
+    
     const frames = [];
     let index = 0;
     
@@ -58,6 +60,7 @@ class SpriteAnimator {
   }
   
   async setAnimation(animationId) {
+    console.log('[SpriteAnimator] setAnimation called:', this.speciesId, animationId);
     if (this.currentAnimation === animationId) return this.frames[animationId];
     
     // Load frames first before changing animation

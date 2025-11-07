@@ -117,7 +117,17 @@ class PetManager {
   
   createPetFromData(petData) {
     const speciesData = this.speciesManager.getSpecies(petData.species);
-    if (!speciesData) return null;
+    if (!speciesData) {
+      console.error('[PetManager] ❌ Species data not found:', petData.species);
+      return null;
+    }
+    
+    console.log('[PetManager] 🐾 Creating pet:', petData.species, {
+      animations: speciesData.animations?.length || 0,
+      movementPath: speciesData.movementPath,
+      dragPath: speciesData.dragPath,
+      fps: speciesData.fps
+    });
     
     const pet = new Pet(petData.species, speciesData, this);
     pet.id = petData.id; // Use global ID
@@ -126,7 +136,7 @@ class PetManager {
     pet.direction = petData.direction || 1;
     this.pets.push(pet);
     
-    console.log('[PetManager] Created synced pet:', petData.species);
+    console.log('[PetManager] ✅ Created synced pet:', petData.species);
     return pet;
   }
   

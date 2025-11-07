@@ -58,12 +58,20 @@ class SpeciesManager {
     
     for (const id of speciesList) {
       try {
-        const url = chrome.runtime.getURL(`Resources/Species/${id}.json`);
-        // Add cache busting to force reload of JSON files
-        const response = await fetch(url, { cache: 'no-store' });
+        // Add timestamp to URL to force bypass all caches
+        const url = chrome.runtime.getURL(`Resources/Species/${id}.json`) + '?v=' + Date.now();
+        const response = await fetch(url, { 
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         if (response.ok) {
           const data = await response.json();
           this.species[id] = data;
+          
+          // Log problematic species to debug
+          if (['snail', 'snail_nicky', 'cat_house', 'gazebo', 'nyan', 'sunflower'].includes(id)) {
+            console.log('[SpeciesManager] 🔍', id, 'animations:', data.animations?.length || 0, data.animations);
+          }
         }
       } catch (error) {
         console.warn('[SpeciesManager] Failed to load:', id, error);
