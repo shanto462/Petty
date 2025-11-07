@@ -15,7 +15,7 @@ class PopupController {
     await this.speciesManager.loadAllSpecies();
     await this.loadGlobalPets();
     this.renderSpeciesGrid();
-    this.setupToggle();
+    this.updateUI(); // Update pet counts and totals
     this.setupRemoveAll();
     this.setupSearch();
     this.updateSpeciesCount();
@@ -23,6 +23,7 @@ class PopupController {
     const loadedCount = Object.keys(this.speciesManager.species).length;
     console.log('[Popup] ✅ Ready! Loaded', loadedCount, '/ 43 species');
     console.log('[Popup] Species:', Object.keys(this.speciesManager.species).sort().join(', '));
+    console.log('[Popup] Active pets:', this.globalPets.length);
     
     if (loadedCount < 43) {
       console.warn('[Popup] ⚠️ Missing species! Expected 43, got', loadedCount);
@@ -113,7 +114,7 @@ class PopupController {
     const item = document.createElement('div');
     item.className = 'pet-item';
     item.dataset.species = species.id;
-    item.title = species.id.replace(/_/g, ' ') + '\nLeft-click: Add | Right-click: Remove';
+    item.title = species.id.replace(/_/g, ' ') + '\nClick to toggle on/off';
     
     const img = document.createElement('img');
     // Try multiple animation paths
@@ -142,17 +143,12 @@ class PopupController {
     name.textContent = species.id.replace(/_/g, ' ');
     item.appendChild(name);
     
-    const count = document.createElement('div');
-    count.className = 'pet-count';
-    count.textContent = this.getPetCount(species.id);
-    count.style.display = this.getPetCount(species.id) > 0 ? 'block' : 'none';
-    item.appendChild(count);
+    const status = document.createElement('div');
+    status.className = 'pet-status';
+    item.appendChild(status);
     
-    item.onclick = () => this.addPet(species.id);
-    item.oncontextmenu = (e) => {
-      e.preventDefault();
-      this.removePet(species.id);
-    };
+    // Toggle behavior: click to add/remove
+    item.onclick = () => this.togglePet(species.id);
     
     if (this.getPetCount(species.id) > 0) {
       item.classList.add('active');
@@ -163,6 +159,18 @@ class PopupController {
   
   getPetCount(speciesId) {
     return this.globalPets.filter(p => p.species === speciesId).length;
+  }
+  
+  isActive(speciesId) {
+    return this.globalPets.some(p => p.species === speciesId);
+  }
+  
+  async togglePet(speciesId) {
+    if (this.isActive(speciesId)) {
+      await this.removePet(speciesId);
+    } else {
+      await this.addPet(speciesId);
+    }
   }
   
   async addPet(speciesId) {
@@ -199,16 +207,11 @@ class PopupController {
   }
   
   updateUI() {
+    // Update pet item states
     const items = document.querySelectorAll('.pet-item');
     items.forEach(item => {
       const speciesId = item.dataset.species;
-      const count = this.getPetCount(speciesId);
-      const countEl = item.querySelector('.pet-count');
-      
-      countEl.textContent = count;
-      countEl.style.display = count > 0 ? 'block' : 'none';
-      
-      if (count > 0) {
+      if (this.isActive(speciesId)) {
         item.classList.add('active');
       } else {
         item.classList.remove('active');
@@ -217,33 +220,77 @@ class PopupController {
     
     // Update total count
     document.getElementById('total-count').textContent = this.globalPets.length;
+    
+    // Update active pets list
+    this.updateActivePetsList();
   }
   
-  setupToggle() {
-    const toggle = document.getElementById('toggle-enabled');
-    const label = document.getElementById('toggle-label');
+  updateActivePetsList() {
+    const listEl = document.getElementById('active-pets-list');
     
-    chrome.storage.sync.get(['pettyEnabled'], (result) => {
-      const enabled = result.pettyEnabled !== false;
-      if (enabled) {
-        toggle.classList.add('active');
-      } else {
-        toggle.classList.remove('active');
+    if (this.globalPets.length === 0) {
+      listEl.innerHTML = '<div class="no-active-pets">No active pets. Click a pet below to add!</div>';
+      return;
+    }
+    
+    // Group pets by species
+    const petsBySpecies = {};
+    this.globalPets.forEach(pet => {
+      if (!petsBySpecies[pet.species]) {
+        petsBySpecies[pet.species] = [];
       }
+      petsBySpecies[pet.species].push(pet);
     });
     
-    label.onclick = () => {
-      const isActive = toggle.classList.contains('active');
-      const newValue = !isActive;
+    listEl.innerHTML = '';
+    Object.keys(petsBySpecies).sort().forEach(speciesId => {
+      const species = this.speciesManager.getSpecies(speciesId);
       
-      chrome.storage.sync.set({ pettyEnabled: newValue });
+      const badge = document.createElement('div');
+      badge.className = 'active-pet-badge';
       
-      if (newValue) {
-        toggle.classList.add('active');
-      } else {
-        toggle.classList.remove('active');
-      }
-    };
+      // Add pet image
+      const img = document.createElement('img');
+      img.style.width = '24px';
+      img.style.height = '24px';
+      img.style.objectFit = 'contain';
+      img.style.imageRendering = 'pixelated';
+      
+      const imagePaths = [
+        `${speciesId}_${species?.movementPath || 'walk'}-0.png`,
+        `${speciesId}_front-0.png`,
+        `${speciesId}_idle-0.png`
+      ];
+      
+      let imageIndex = 0;
+      img.src = chrome.runtime.getURL(`Resources/PetsAssets/${imagePaths[0]}`);
+      img.onerror = () => {
+        imageIndex++;
+        if (imageIndex < imagePaths.length) {
+          img.src = chrome.runtime.getURL(`Resources/PetsAssets/${imagePaths[imageIndex]}`);
+        }
+      };
+      
+      badge.appendChild(img);
+      
+      // Add name
+      const name = document.createElement('span');
+      name.textContent = speciesId.replace(/_/g, ' ');
+      badge.appendChild(name);
+      
+      // Add remove button
+      const removeBtn = document.createElement('span');
+      removeBtn.className = 'remove-btn';
+      removeBtn.title = 'Remove';
+      removeBtn.textContent = '×';
+      removeBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.removePet(speciesId);
+      };
+      badge.appendChild(removeBtn);
+      
+      listEl.appendChild(badge);
+    });
   }
   
   setupRemoveAll() {

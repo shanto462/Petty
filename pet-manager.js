@@ -18,46 +18,29 @@ class PetManager {
     this.sendViewportUpdate();
     window.addEventListener('resize', () => this.sendViewportUpdate());
     
-    // Load settings
-    chrome.storage.sync.get(['pettyEnabled'], (result) => {
-      this.enabled = result.pettyEnabled !== false;
-      
-      if (this.enabled) {
-        // Get global pets from background
-        ChromeMessaging.sendMessage({ type: 'GET_GLOBAL_PETS' })
-          .then((response) => {
-            if (response && response.pets) {
-              response.pets.forEach(petData => {
-                this.createPetFromData(petData);
-              });
-            }
-            
-            // Start update loop
-            this.startUpdateLoop();
-            
-            console.log('[PetManager] ✅ Ready! Active pets:', this.pets.length);
-          })
-          .catch((error) => {
-            console.error('[PetManager] Failed to get global pets:', error);
-            // Still start update loop
-            this.startUpdateLoop();
+    // Get global pets from background
+    ChromeMessaging.sendMessage({ type: 'GET_GLOBAL_PETS' })
+      .then((response) => {
+        if (response && response.pets) {
+          response.pets.forEach(petData => {
+            this.createPetFromData(petData);
           });
-      }
-    });
+        }
+        
+        // Start update loop
+        this.startUpdateLoop();
+        
+        console.log('[PetManager] ✅ Ready! Active pets:', this.pets.length);
+      })
+      .catch((error) => {
+        console.error('[PetManager] Failed to get global pets:', error);
+        // Still start update loop
+        this.startUpdateLoop();
+      });
     
     // Listen for messages from background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       this.handleBackgroundMessage(message);
-    });
-    
-    // Listen for storage changes
-    chrome.storage.onChanged.addListener((changes) => {
-      if (changes.pettyEnabled) {
-        this.enabled = changes.pettyEnabled.newValue;
-        if (!this.enabled) {
-          this.removeAllPetsLocal();
-        }
-      }
     });
   }
   

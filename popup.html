@@ -2,39 +2,44 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Desktop Pets</title>
+  <title>Browser Pets</title>
   <style>
     body {
-      width: 600px;
-      max-height: 700px;
+      width: 650px;
+      max-height: 750px;
       min-height: 500px;
       padding: 0;
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
       color: white;
       overflow-y: auto;
     }
     
     .header {
-      padding: 20px;
+      padding: 25px 20px;
       text-align: center;
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(10px);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.2);
     }
     
     h1 {
       margin: 0;
-      font-size: 24px;
+      font-size: 28px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 12px;
+      letter-spacing: -0.5px;
     }
     
     .subtitle {
-      font-size: 12px;
-      opacity: 0.9;
-      margin-top: 5px;
+      font-size: 13px;
+      opacity: 0.85;
+      margin-top: 8px;
+      font-weight: 400;
     }
     
     .loading {
@@ -44,52 +49,78 @@
       opacity: 0.8;
     }
     
-    .controls {
+    .active-pets-section {
       padding: 15px 20px;
       background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .active-pets-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 10px;
     }
     
-    .toggle-section {
+    .active-pets-title {
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .active-count {
+      background: rgba(255, 255, 255, 0.25);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .active-pets-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 40px;
+    }
+    
+    .active-pet-badge {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(5px);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.2s;
     }
     
-    .toggle {
-      width: 50px;
-      height: 26px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 13px;
-      position: relative;
+    .active-pet-badge:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+    
+    .active-pet-badge .remove-btn {
       cursor: pointer;
-      transition: background 0.3s;
+      opacity: 0.7;
+      font-weight: bold;
+      transition: opacity 0.2s;
     }
     
-    .toggle.active {
-      background: #4CAF50;
+    .active-pet-badge .remove-btn:hover {
+      opacity: 1;
+      color: #ff6b6b;
     }
     
-    .toggle-slider {
-      position: absolute;
-      top: 3px;
-      left: 3px;
-      width: 20px;
-      height: 20px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.3s;
-    }
-    
-    .toggle.active .toggle-slider {
-      transform: translateX(24px);
-    }
-    
-    .stats {
+    .no-active-pets {
+      color: rgba(255, 255, 255, 0.6);
       font-size: 12px;
-      opacity: 0.9;
+      font-style: italic;
+      text-align: center;
+      padding: 10px;
     }
     
     .content {
@@ -97,101 +128,124 @@
     }
     
     .category {
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
     
     .category h3 {
-      margin: 0 0 10px 0;
-      font-size: 14px;
+      margin: 0 0 12px 0;
+      font-size: 13px;
       text-transform: uppercase;
-      opacity: 0.8;
-      font-weight: 600;
+      opacity: 0.75;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.9);
     }
     
     .pet-grid {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
-      gap: 8px;
+      gap: 10px;
     }
     
     .pet-item {
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid transparent;
-      border-radius: 10px;
-      padding: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 12px 8px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
+      backdrop-filter: blur(10px);
     }
     
     .pet-item:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: scale(1.05);
+      background: rgba(255, 255, 255, 0.22);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     
     .pet-item.active {
-      background: rgba(76, 175, 80, 0.3);
+      background: rgba(76, 175, 80, 0.35);
       border-color: #4CAF50;
+      box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+    }
+    
+    .pet-item.active:hover {
+      background: rgba(76, 175, 80, 0.45);
+      transform: translateY(-2px);
     }
     
     .pet-item img {
-      width: 48px;
-      height: 48px;
+      width: 50px;
+      height: 50px;
       object-fit: contain;
       image-rendering: pixelated;
       image-rendering: -moz-crisp-edges;
       image-rendering: crisp-edges;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
     }
     
     .pet-name {
-      font-size: 9px;
-      margin-top: 3px;
+      font-size: 10px;
+      margin-top: 5px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       text-transform: capitalize;
+      font-weight: 500;
+      opacity: 0.95;
     }
     
-    .pet-count {
+    .pet-status {
       position: absolute;
-      top: 5px;
-      right: 5px;
+      top: 8px;
+      right: 8px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
       background: #4CAF50;
-      color: white;
-      border-radius: 10px;
-      padding: 2px 6px;
-      font-size: 10px;
-      font-weight: bold;
+      display: none;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+    }
+    
+    .pet-item.active .pet-status {
+      display: block;
     }
     
     .footer {
-      padding: 15px 20px;
-      background: rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.25);
       text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     .button {
-      background: rgba(244, 67, 54, 0.3);
-      border: 1px solid rgba(244, 67, 54, 0.5);
+      background: linear-gradient(135deg, rgba(244, 67, 54, 0.5), rgba(233, 30, 99, 0.5));
+      border: 2px solid rgba(255, 255, 255, 0.3);
       color: white;
-      padding: 10px 15px;
-      border-radius: 8px;
+      padding: 12px 20px;
+      border-radius: 12px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
+      font-weight: 600;
       width: 100%;
-      transition: all 0.2s;
+      transition: all 0.25s;
+      backdrop-filter: blur(5px);
     }
     
     .button:hover {
-      background: rgba(244, 67, 54, 0.5);
+      background: linear-gradient(135deg, rgba(244, 67, 54, 0.7), rgba(233, 30, 99, 0.7));
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
     }
     
     .help {
-      font-size: 11px;
-      opacity: 0.8;
-      margin-top: 10px;
-      line-height: 1.5;
+      font-size: 12px;
+      opacity: 0.75;
+      margin-top: 12px;
+      line-height: 1.6;
     }
     
     ::-webkit-scrollbar {
@@ -208,36 +262,44 @@
     }
     
     .search-bar {
-      padding: 15px 20px;
-      background: rgba(0, 0, 0, 0.15);
+      padding: 18px 20px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     .search-input {
       width: 100%;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.2);
+      padding: 12px 18px;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
       color: white;
       font-size: 14px;
       outline: none;
       box-sizing: border-box;
+      transition: all 0.25s;
+      font-weight: 500;
     }
     
     .search-input::placeholder {
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(255, 255, 255, 0.55);
     }
     
     .search-input:focus {
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.45);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
     }
     
     .species-count {
       text-align: center;
-      padding: 10px;
+      padding: 12px;
       font-size: 12px;
-      opacity: 0.8;
-      background: rgba(0, 0, 0, 0.1);
+      opacity: 0.75;
+      background: rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 500;
     }
   </style>
 </head>
@@ -245,21 +307,18 @@
   <div class="header">
     <h1>
       <span>🐾</span>
-      <span>Desktop Pets</span>
+      <span>Browser Pets</span>
     </h1>
-    <div class="subtitle">Synchronized across all tabs!</div>
+    <div class="subtitle">Click to toggle pets on/off • Synced across all tabs</div>
   </div>
   
-  <div class="controls">
-    <div class="toggle-section">
-      <span>Enabled</span>
-      <div class="toggle active" id="toggle-enabled">
-        <div class="toggle-slider"></div>
-      </div>
-      <div id="toggle-label" style="position: absolute; opacity: 0; cursor: pointer; width: 100%; height: 100%; top: 0; left: 0;"></div>
+  <div class="active-pets-section">
+    <div class="active-pets-header">
+      <div class="active-pets-title">Active Pets</div>
+      <div class="active-count" id="total-count">0</div>
     </div>
-    <div class="stats">
-      Active: <strong id="total-count">0</strong> pets
+    <div class="active-pets-list" id="active-pets-list">
+      <div class="no-active-pets">No active pets. Click a pet below to add!</div>
     </div>
   </div>
   
@@ -280,7 +339,7 @@
   <div class="footer">
     <button class="button" id="remove-all">🗑️ Remove All Pets</button>
     <div class="help">
-      💡 Left-click to add • Right-click to remove
+      💡 Click any pet to toggle it on/off
     </div>
   </div>
   
