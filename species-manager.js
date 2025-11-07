@@ -1,11 +1,14 @@
 // Species Manager - Loads and manages all species data with singleton pattern
 
-// Access configuration and species list
-const { LOG, SPECIES } = window.PettyConfig;
-const SPECIES_LIST = window.SPECIES_LIST;
-const { validateSpeciesData } = window.SpeciesValidator || {};
+(function() {
+  // Only define if not already defined
+  if (!window.SpeciesManager) {
+    // Access configuration and species list
+    const { LOG, SPECIES } = window.PettyConfig;
+    const SPECIES_LIST = window.SPECIES_LIST;
+    const { validateSpeciesData } = window.SpeciesValidator || {};
 
-class SpeciesManager {
+    class SpeciesManager {
   // Singleton instance
   static #instance = null;
 
@@ -181,9 +184,11 @@ class SpeciesManager {
     this.species = {};
     this.loaded = false;
     this.loading = null;
+    }
   }
-}
 
-// Export both the class and singleton instance
-window.SpeciesManager = SpeciesManager;
+    // Export both the class and singleton instance
+    window.SpeciesManager = SpeciesManager;
+  }
+})();
 

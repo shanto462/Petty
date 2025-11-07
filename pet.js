@@ -1,9 +1,12 @@
 // Pet - Individual pet instance with capability-based behavior
 
-// Access configuration
-const { DISPLAY, ANIMATION, LOG, MESSAGE_TYPES, DEFAULT_ANIMATIONS, CAPABILITIES } = window.PettyConfig;
+(function() {
+  // Only define if not already defined
+  if (!window.Pet) {
+    // Access configuration
+    const { DISPLAY, ANIMATION, LOG, MESSAGE_TYPES, DEFAULT_ANIMATIONS, CAPABILITIES } = window.PettyConfig;
 
-class Pet {
+    class Pet {
   constructor(speciesId, speciesData, petManager) {
     this.id = Math.random().toString(36).substr(2, 9);
     this.speciesId = speciesId;
@@ -326,10 +329,11 @@ class Pet {
     this.img = null;
     this.animator = null;
 
-    console.log(LOG.PREFIXES.PET, this.speciesId, 'destroyed');
+      console.log(LOG.PREFIXES.PET, this.speciesId, 'destroyed');
+    }
   }
-}
 
-// Export
-window.Pet = Pet;
-
+    // Export
+    window.Pet = Pet;
+  }
+})();

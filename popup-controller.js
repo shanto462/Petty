@@ -1,9 +1,14 @@
 // Popup Controller - Pet management UI
 
-// Access configuration
-const { LOG, MESSAGE_TYPES, SPECIES, TAG_EMOJI } = window.PettyConfig;
+(function() {
+  // Only initialize if not already initialized
+  if (!window.__POPUP_CONTROLLER_INITIALIZED__) {
+    window.__POPUP_CONTROLLER_INITIALIZED__ = true;
 
-class PopupController {
+    // Access configuration
+    const { LOG, MESSAGE_TYPES, SPECIES, TAG_EMOJI } = window.PettyConfig;
+
+    class PopupController {
   constructor() {
     this.speciesManager = null;
     this.globalPets = [];
@@ -363,12 +368,14 @@ class PopupController {
   }
 }
 
-// Initialize when DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    new PopupController();
-  });
-} else {
-  new PopupController();
-}
+    // Initialize when DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        new PopupController();
+      });
+    } else {
+      new PopupController();
+    }
+  }
+})();
 
