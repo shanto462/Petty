@@ -127,12 +127,14 @@ function validateAllSpecies(speciesCollection) {
 }
 
 // Export for use in other modules (works in both window and service worker contexts)
-const globalScope = typeof window !== 'undefined' ? window : self;
+(function() {
+  const globalScope = typeof window !== 'undefined' ? window : self;
 
-if (!globalScope.SpeciesValidator) {
-  globalScope.SpeciesValidator = {
-    validateSpeciesData,
-    validateAllSpecies,
-    SPECIES_SCHEMA
-  };
-}
+  if (!globalScope.SpeciesValidator) {
+    globalScope.SpeciesValidator = {
+      validateSpeciesData,
+      validateAllSpecies,
+      SPECIES_SCHEMA
+    };
+  }
+})();

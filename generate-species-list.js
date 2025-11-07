@@ -37,12 +37,18 @@ function generateSpeciesList() {
  * Complete list of all available species
  * Auto-generated from Resources/Species/*.json files
  */
-window.SPECIES_LIST = ${JSON.stringify(speciesList, null, 2)};
+(function() {
+  const globalScope = typeof window !== 'undefined' ? window : self;
 
-// Also export as const for ES6 modules
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = ${JSON.stringify(speciesList, null, 2)};
-}
+  if (!globalScope.SPECIES_LIST) {
+    globalScope.SPECIES_LIST = ${JSON.stringify(speciesList, null, 2).replace(/\n/g, '\n    ')};
+  }
+
+  // Also export as const for ES6 modules
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ${JSON.stringify(speciesList, null, 2).replace(/\n/g, '\n  ')};
+  }
+})();
 `;
 
     fs.writeFileSync(OUTPUT_FILE, output, 'utf8');
