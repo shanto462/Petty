@@ -4,6 +4,7 @@ class PetManager {
   constructor() {
     this.speciesManager = new SpeciesManager();
     this.pets = [];
+    this.ephemeralEntities = []; // UFOs, clouds, poop stains, etc.
     this.enabled = true;
     this.menuOpen = false;
   }
@@ -148,13 +149,50 @@ class PetManager {
   startUpdateLoop() {
     const update = (timestamp) => {
       if (!this.enabled) return;
-      
+
+      // Update pets
       this.pets.forEach(pet => pet.update(timestamp));
-      
+
+      // Update ephemeral entities
+      this.ephemeralEntities.forEach(entity => entity.update(timestamp));
+
+      // Remove dead ephemeral entities
+      this.ephemeralEntities = this.ephemeralEntities.filter(e => e.isAlive);
+
       requestAnimationFrame(update);
     };
-    
+
     requestAnimationFrame(update);
+  }
+
+  /**
+   * Add an ephemeral entity (UFO, cloud, poop stain, etc.)
+   */
+  addEphemeralEntity(entity) {
+    this.ephemeralEntities.push(entity);
+    console.log('[PetManager] Added ephemeral entity:', entity.type, entity.id);
+  }
+
+  /**
+   * Remove an ephemeral entity
+   */
+  removeEphemeralEntity(entityId) {
+    const index = this.ephemeralEntities.findIndex(e => e.id === entityId);
+    if (index >= 0) {
+      this.ephemeralEntities[index].remove();
+      this.ephemeralEntities.splice(index, 1);
+      console.log('[PetManager] Removed ephemeral entity:', entityId);
+    }
+  }
+
+  /**
+   * Remove all ephemeral entities of a specific type
+   */
+  removeEphemeralEntitiesByType(type) {
+    const toRemove = this.ephemeralEntities.filter(e => e.type === type);
+    toRemove.forEach(e => e.remove());
+    this.ephemeralEntities = this.ephemeralEntities.filter(e => e.type !== type);
+    console.log('[PetManager] Removed all ephemeral entities of type:', type);
   }
 }
 

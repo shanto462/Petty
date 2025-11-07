@@ -18,6 +18,7 @@
         "chrome-messaging.js",
         "species-manager.js",
         "sprite-animator.js",
+        "ephemeral-entity.js",
         "pet.js",
         "pet-manager.js"
       ],

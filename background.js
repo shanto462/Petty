@@ -1,7 +1,7 @@
 // Background Service Worker - Coordinates pets across all tabs
 
 // Load dependencies
-importScripts('species-list.js', 'config.js', 'species-validator.js');
+importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-event-scheduler.js');
 
 (function() {
   // Only initialize if not already initialized
@@ -29,6 +29,9 @@ importScripts('species-list.js', 'config.js', 'species-validator.js');
       gravityEnabled: true,
       randomEvents: true
     };
+
+    // Random Event Scheduler
+    this.eventScheduler = new RandomEventScheduler(this);
 
     this.init();
   }
@@ -61,6 +64,9 @@ importScripts('species-list.js', 'config.js', 'species-validator.js');
 
     // Broadcast pet positions to all tabs
     this.startBroadcast();
+
+    // Start random event scheduler
+    this.eventScheduler.start();
   }
 
   async loadSettings() {

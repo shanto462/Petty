@@ -237,6 +237,46 @@
     this.element.style.left = this.position.x + 'px';
     this.element.style.top = this.position.y + 'px';
   }
+
+  /**
+   * ShapeShifter capability: Smoothly scale the pet over time
+   * Used for UFO abduction effect
+   * @param {number} targetScale - Target scale (e.g., 0.5 for 50% size)
+   * @param {number} duration - Duration in ms
+   */
+  async scaleTo(targetScale, duration) {
+    const startScale = this.element.scale || 1.0;
+    const startTime = Date.now();
+
+    return new Promise((resolve) => {
+      const animate = () => {
+        if (!this.element) {
+          resolve();
+          return;
+        }
+
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(1, elapsed / duration);
+
+        // Ease-in-out function
+        const eased = progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+        const currentScale = startScale + (targetScale - startScale) * eased;
+        this.element.scale = currentScale;
+        this.element.style.transform = `scale(${currentScale})`;
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          resolve();
+        }
+      };
+
+      requestAnimationFrame(animate);
+    });
+  }
   
   onMouseDown(e) {
     this.isDragging = true;
