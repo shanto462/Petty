@@ -10,18 +10,8 @@ class PopupController {
   async init() {
     console.log('[Popup] Initializing...');
     
-    // Load species manager (reuse from content script)
-    const script = document.createElement('script');
-    script.src = 'species-manager.js';
-    document.head.appendChild(script);
-    
-    await new Promise(resolve => {
-      script.onload = () => {
-        this.speciesManager = new SpeciesManager();
-        resolve();
-      };
-    });
-    
+    // Species manager is already loaded via popup.html script tag
+    this.speciesManager = new SpeciesManager();
     await this.speciesManager.loadAllSpecies();
     await this.loadGlobalPets();
     this.renderSpeciesGrid();

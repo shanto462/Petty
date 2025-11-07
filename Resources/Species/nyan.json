@@ -1,5 +1,10 @@
 {
-  "animations": [],
+  "animations": [
+    {
+      "id": "front",
+      "position": "fromEntityBottomLeft"
+    }
+  ],
   "capabilities": [
     "AnimatedSprite",
     "AnimationsProvider",
