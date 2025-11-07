@@ -3,12 +3,17 @@
 // Load dependencies
 importScripts('species-list.js', 'config.js', 'species-validator.js');
 
-// Access configuration from service worker global scope
-const { PHYSICS, DISPLAY, LOG, STORAGE_KEYS, MESSAGE_TYPES } = self.PettyConfig;
-const SPECIES_LIST = self.SPECIES_LIST;
-const { validateSpeciesData } = self.SpeciesValidator || {};
+(function() {
+  // Only initialize if not already initialized
+  if (!self.__BACKGROUND_INITIALIZED__) {
+    self.__BACKGROUND_INITIALIZED__ = true;
 
-class PetCoordinator {
+    // Access configuration from service worker global scope
+    const { PHYSICS, DISPLAY, LOG, STORAGE_KEYS, MESSAGE_TYPES } = self.PettyConfig;
+    const SPECIES_LIST = self.SPECIES_LIST;
+    const { validateSpeciesData } = self.SpeciesValidator || {};
+
+    class PetCoordinator {
   constructor() {
     this.globalPets = []; // Shared pet states
     this.speciesData = {}; // Cache species data
@@ -272,11 +277,12 @@ class PetCoordinator {
     });
   }
   
-  savePets() {
-    chrome.storage.sync.set({ [STORAGE_KEYS.GLOBAL_PETS]: this.globalPets });
+    savePets() {
+      chrome.storage.sync.set({ [STORAGE_KEYS.GLOBAL_PETS]: this.globalPets });
+    }
   }
-}
 
-// Initialize
-const coordinator = new PetCoordinator();
-
+    // Initialize
+    const coordinator = new PetCoordinator();
+  }
+})();
