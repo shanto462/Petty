@@ -6,7 +6,9 @@
  * Complete list of all available species
  * Auto-generated from Resources/Species/*.json files
  */
-window.SPECIES_LIST = [
+const globalScope = typeof window !== 'undefined' ? window : self;
+
+globalScope.SPECIES_LIST = [
   "ape",
   "betta",
   "cat",

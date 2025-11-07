@@ -162,9 +162,11 @@ export const CAPABILITIES = {
   BOUNCE_ON_COLLISIONS: 'BounceOnLateralCollisions'
 };
 
-// For browser environments without module support, attach to window
-if (typeof window !== 'undefined' && !window.PettyConfig) {
-  window.PettyConfig = {
+// Export to global scope (works in both window and service worker contexts)
+const globalScope = typeof window !== 'undefined' ? window : self;
+
+if (!globalScope.PettyConfig) {
+  globalScope.PettyConfig = {
     PHYSICS,
     DISPLAY,
     ANIMATION,

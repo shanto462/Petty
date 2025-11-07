@@ -3,10 +3,10 @@
 // Load dependencies
 importScripts('species-list.js', 'config.js', 'species-validator.js');
 
-// Access configuration
-const { PHYSICS, DISPLAY, LOG, STORAGE_KEYS, MESSAGE_TYPES } = window.PettyConfig;
-const SPECIES_LIST = window.SPECIES_LIST;
-const { validateSpeciesData } = window.SpeciesValidator || {};
+// Access configuration from service worker global scope
+const { PHYSICS, DISPLAY, LOG, STORAGE_KEYS, MESSAGE_TYPES } = self.PettyConfig;
+const SPECIES_LIST = self.SPECIES_LIST;
+const { validateSpeciesData } = self.SpeciesValidator || {};
 
 class PetCoordinator {
   constructor() {
