@@ -27,6 +27,7 @@
       this.updateUI();
       this.setupRemoveAll();
       this.setupSearch();
+      this.setupSettings();
       this.updateSpeciesCount();
 
       const loadedCount = Object.keys(this.speciesManager.species).length;
@@ -349,6 +350,99 @@
     if (totalSpecies < SPECIES.EXPECTED_COUNT) {
       countEl.style.background = 'rgba(244, 67, 54, 0.3)';
       countEl.innerHTML = `⚠️ Showing <strong id="shown-count">${totalSpecies}</strong> / <strong id="species-count">${SPECIES.EXPECTED_COUNT}</strong> species (Some failed to load!)`;
+    }
+  }
+
+  async setupSettings() {
+    const { DISPLAY, SPEED } = window.PettyConfig;
+
+    // Load current settings from storage
+    const settings = await new Promise((resolve) => {
+      chrome.storage.sync.get(['pettySettings'], (result) => {
+        resolve(result.pettySettings || {
+          petSize: DISPLAY.DEFAULT_PET_SIZE,
+          speedMultiplier: SPEED.DEFAULT_MULTIPLIER,
+          gravityEnabled: true,
+          randomEvents: true
+        });
+      });
+    });
+
+    console.log(LOG.PREFIXES.POPUP, 'Loaded settings:', settings);
+
+    // Set initial values
+    const petSizeSlider = document.getElementById('petSize');
+    const speedSlider = document.getElementById('speedMultiplier');
+    const gravityToggle = document.getElementById('gravityEnabled');
+    const randomEventsToggle = document.getElementById('randomEvents');
+
+    petSizeSlider.value = settings.petSize;
+    speedSlider.value = settings.speedMultiplier;
+    gravityToggle.checked = settings.gravityEnabled;
+    randomEventsToggle.checked = settings.randomEvents;
+
+    // Update display values
+    document.getElementById('petSize-value').textContent = `${settings.petSize}px`;
+    document.getElementById('speedMultiplier-value').textContent = `${settings.speedMultiplier}x`;
+
+    // Toggle settings section
+    const settingsToggle = document.getElementById('settings-toggle');
+    const settingsContent = document.getElementById('settings-content');
+    settingsToggle.addEventListener('click', () => {
+      settingsToggle.classList.toggle('collapsed');
+      settingsContent.classList.toggle('collapsed');
+    });
+
+    // Pet Size slider
+    petSizeSlider.addEventListener('input', async (e) => {
+      const value = parseInt(e.target.value);
+      document.getElementById('petSize-value').textContent = `${value}px`;
+      await this.saveSetting('petSize', value);
+    });
+
+    // Speed Multiplier slider
+    speedSlider.addEventListener('input', async (e) => {
+      const value = parseFloat(e.target.value);
+      document.getElementById('speedMultiplier-value').textContent = `${value}x`;
+      await this.saveSetting('speedMultiplier', value);
+    });
+
+    // Gravity toggle
+    gravityToggle.addEventListener('change', async (e) => {
+      await this.saveSetting('gravityEnabled', e.target.checked);
+    });
+
+    // Random Events toggle
+    randomEventsToggle.addEventListener('change', async (e) => {
+      await this.saveSetting('randomEvents', e.target.checked);
+    });
+  }
+
+  async saveSetting(key, value) {
+    try {
+      // Load current settings
+      const result = await new Promise((resolve) => {
+        chrome.storage.sync.get(['pettySettings'], (result) => {
+          resolve(result.pettySettings || {});
+        });
+      });
+
+      // Update the specific setting
+      result[key] = value;
+
+      // Save back to storage
+      await new Promise((resolve) => {
+        chrome.storage.sync.set({ pettySettings: result }, resolve);
+      });
+
+      console.log(LOG.PREFIXES.POPUP, 'Saved setting:', key, '=', value);
+
+      // Notify background worker to reload settings
+      chrome.runtime.sendMessage({ type: 'RELOAD_SETTINGS' }).catch(() => {
+        // Background might not be listening, that's okay
+      });
+    } catch (error) {
+      console.error(LOG.PREFIXES.POPUP, 'Failed to save setting:', error);
     }
   }
 

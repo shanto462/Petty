@@ -9,7 +9,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js');
     self.__BACKGROUND_INITIALIZED__ = true;
 
     // Access configuration from service worker global scope
-    const { PHYSICS, DISPLAY, LOG, STORAGE_KEYS, MESSAGE_TYPES } = self.PettyConfig;
+    const { PHYSICS, DISPLAY, SPEED, LOG, STORAGE_KEYS, MESSAGE_TYPES } = self.PettyConfig;
     const SPECIES_LIST = self.SPECIES_LIST;
     const { validateSpeciesData } = self.SpeciesValidator || {};
 
@@ -21,15 +21,27 @@ importScripts('species-list.js', 'config.js', 'species-validator.js');
     this.broadcastInterval = null;
     this.lastPhysicsUpdate = Date.now();
     this.viewport = PHYSICS.DEFAULT_VIEWPORT; // Use configuration constant
+
+    // Settings (loaded from chrome.storage)
+    this.settings = {
+      petSize: DISPLAY.DEFAULT_PET_SIZE,
+      speedMultiplier: SPEED.DEFAULT_MULTIPLIER,
+      gravityEnabled: true,
+      randomEvents: true
+    };
+
     this.init();
   }
   
   async init() {
     console.log('[Background] Pet Coordinator initialized');
-    
+
+    // Load settings first
+    await this.loadSettings();
+
     // Load species data
     await this.loadSpeciesData();
-    
+
     // Load saved global pets
     chrome.storage.sync.get([STORAGE_KEYS.GLOBAL_PETS], (result) => {
       if (result[STORAGE_KEYS.GLOBAL_PETS]) {
@@ -37,18 +49,32 @@ importScripts('species-list.js', 'config.js', 'species-validator.js');
         console.log(LOG.PREFIXES.BACKGROUND, 'Loaded', this.globalPets.length, 'global pets');
       }
     });
-    
+
     // Listen for messages from tabs
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       this.handleMessage(message, sender, sendResponse);
       return true; // Keep channel open for async response
     });
-    
+
     // Run physics in background
     this.startPhysicsEngine();
-    
+
     // Broadcast pet positions to all tabs
     this.startBroadcast();
+  }
+
+  async loadSettings() {
+    return new Promise((resolve) => {
+      chrome.storage.sync.get(['pettySettings'], (result) => {
+        if (result.pettySettings) {
+          this.settings = { ...this.settings, ...result.pettySettings };
+          console.log(LOG.PREFIXES.BACKGROUND, 'Loaded settings:', this.settings);
+        } else {
+          console.log(LOG.PREFIXES.BACKGROUND, 'Using default settings:', this.settings);
+        }
+        resolve();
+      });
+    });
   }
   
   async loadSpeciesData() {
@@ -170,6 +196,13 @@ importScripts('species-list.js', 'config.js', 'species-validator.js');
           Object.assign(pet, message.state);
         }
         break;
+
+      case 'RELOAD_SETTINGS':
+        // Reload settings when changed from popup
+        await this.loadSettings();
+        console.log(LOG.PREFIXES.BACKGROUND, 'Settings reloaded:', this.settings);
+        sendResponse({ success: true });
+        break;
     }
   }
   
@@ -194,14 +227,17 @@ importScripts('species-list.js', 'config.js', 'species-validator.js');
         const species = this.speciesData[pet.species];
         if (!species) return;
 
-        // Speed calculation using configuration constants
-        const speed = (species.speed || 0) * PHYSICS.BASE_SPEED;
-        const gravity = PHYSICS.GRAVITY;
+        // Speed calculation matching macOS formula:
+        // speed = (petSize / defaultSize) * baseSpeed * species.speed * speedMultiplier
+        const sizeRatio = this.settings.petSize / DISPLAY.DEFAULT_PET_SIZE;
+        const speed = sizeRatio * SPEED.BASE_SPEED * (species.speed || 0) * this.settings.speedMultiplier;
+
+        const gravity = this.settings.gravityEnabled ? PHYSICS.GRAVITY : 0;
         const bounce = PHYSICS.BOUNCE;
         const friction = PHYSICS.FRICTION;
 
-        const maxX = this.viewport.width - DISPLAY.PET_SIZE;
-        const maxY = this.viewport.height - DISPLAY.PET_SIZE;
+        const maxX = this.viewport.width - this.settings.petSize;
+        const maxY = this.viewport.height - this.settings.petSize;
         
         // Check if pet should be stationary (sleeping, eating, etc.)
         const isStationary = !pet.isMoving;

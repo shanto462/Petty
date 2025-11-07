@@ -21,10 +21,17 @@
     this.capabilities = speciesData.capabilities || [];
     this.tags = speciesData.tags || [];
 
-    // State
-    this.position = { x: Math.random() * (window.innerWidth - 100), y: 0 };
+    // State - Initial positioning matches macOS behavior
+    // X: 20-80% of viewport width
+    // Y: 10-50% of viewport height (WallCrawler spawns at bottom)
+    const randomX = window.innerWidth * (0.2 + Math.random() * 0.6); // 20-80%
+    const randomY = this.hasCapability(CAPABILITIES.WALL_CRAWLER)
+      ? window.innerHeight - DISPLAY.DEFAULT_PET_SIZE  // Bottom for wall crawlers
+      : window.innerHeight * (0.1 + Math.random() * 0.4); // 10-50% for normal pets
+
+    this.position = { x: randomX, y: randomY };
     this.velocity = { x: 0, y: 0 };
-    this.direction = 1; // Always start right (like macOS)
+    this.direction = 1; // Always start moving right (like macOS)
     this.isDragging = false;
     this.isGrounded = false;
     this.currentAnimation = null;
@@ -64,8 +71,8 @@
     this.element.dataset.species = this.speciesId;
 
     this.img = document.createElement('img');
-    this.img.style.width = `${DISPLAY.PET_SIZE}px`;
-    this.img.style.height = `${DISPLAY.PET_SIZE}px`;
+    this.img.style.width = `${DISPLAY.DEFAULT_PET_SIZE}px`;
+    this.img.style.height = `${DISPLAY.DEFAULT_PET_SIZE}px`;
     this.element.appendChild(this.img);
 
     // Event listeners using bound references for proper cleanup
@@ -215,12 +222,8 @@
       console.log(LOG.PREFIXES.PET, this.speciesId, 'getting angry at another cat!');
       this.setAnimation(DEFAULT_ANIMATIONS.ANGRY);
 
-      // Wait for animation to complete
-      setTimeout(() => {
-        if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0 && !this.isDragging) {
-          this.setAnimation(this.movementPath);
-        }
-      }, ANIMATION.ANGRY_ANIMATION_DURATION);
+      // Animation will complete naturally via animator.update() using requiredLoops
+      // The update() method (lines 180-191) handles returning to movement animation
 
       // Cooldown - track timer for cleanup
       this.angryTimer = setTimeout(() => {
@@ -250,8 +253,18 @@
 
   onMouseMove(e) {
     if (!this.isDragging) return;
-    this.position.x = e.clientX - this.dragOffset.x;
-    this.position.y = e.clientY - this.dragOffset.y;
+
+    // Calculate new position
+    let newX = e.clientX - this.dragOffset.x;
+    let newY = e.clientY - this.dragOffset.y;
+
+    // Apply boundary constraints to prevent dragging outside viewport
+    const maxX = window.innerWidth - DISPLAY.DEFAULT_PET_SIZE;
+    const maxY = window.innerHeight - DISPLAY.DEFAULT_PET_SIZE;
+
+    this.position.x = Math.max(0, Math.min(maxX, newX));
+    this.position.y = Math.max(0, Math.min(maxY, newY));
+
     this.updatePosition();
 
     // Send position update while dragging

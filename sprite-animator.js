@@ -4,9 +4,9 @@ class SpriteAnimator {
   constructor(speciesId, speciesData) {
     this.speciesId = speciesId;
     this.speciesData = speciesData;
-    // Clamp FPS between 3 and 30 for optimal animation speed
+    // Allow FPS range 0.1-60 to support slow-motion species (e.g., Snail=1fps, cat_house=0.5fps)
     const rawFps = speciesData.fps || 10;
-    this.fps = Math.min(30, Math.max(3, rawFps));
+    this.fps = Math.min(60, Math.max(0.1, rawFps));
     this.currentAnimation = null;
     this.currentFrame = 0;
     this.frameCount = 0;

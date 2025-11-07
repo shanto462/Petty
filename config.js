@@ -38,11 +38,24 @@
      * Used for rendering and visual display of pets
      */
     const DISPLAY = {
-      PET_SIZE: 64, // Pet image size in pixels (width and height)
+      DEFAULT_PET_SIZE: 75, // Default pet size matching macOS (changed from 64 to 75)
+      MIN_PET_SIZE: 30, // Minimum pet size
+      MAX_PET_SIZE: 350, // Maximum pet size
       BASE_Z_INDEX: 999999, // Base z-index for pet elements (species.zIndex is added to this)
       PET_CLASS: 'petty-pet', // CSS class for pet elements
       FLIP_CLASS: 'flipped', // CSS class for horizontally flipped pets
       DRAGGING_CLASS: 'dragging' // CSS class when pet is being dragged
+    };
+
+    /**
+     * Speed Constants
+     * Used for pet movement speed calculations (matches macOS)
+     */
+    const SPEED = {
+      BASE_SPEED: 30, // Base speed in pixels/second (macOS value)
+      DEFAULT_MULTIPLIER: 1.0, // Default user speed multiplier
+      MIN_MULTIPLIER: 0.25, // Minimum speed multiplier (25%)
+      MAX_MULTIPLIER: 2.0 // Maximum speed multiplier (200%)
     };
 
     /**
@@ -165,13 +178,19 @@
       FLIP_HORIZONTALLY: 'FlipHorizontallyWhenGoingLeft',
       GETS_ANGRY: 'GetsAngryWhenMeetingOtherCats',
       ANIMATED_SPRITE: 'AnimatedSprite',
-      BOUNCE_ON_COLLISIONS: 'BounceOnLateralCollisions'
+      BOUNCE_ON_COLLISIONS: 'BounceOnLateralCollisions',
+      WALL_CRAWLER: 'WallCrawler',
+      SLEEPING_PLACE: 'SleepingPlace',
+      LEAVES_POOP_STAINS: 'LeavesPoopStains',
+      ROTATING: 'Rotating',
+      AUTO_RESPAWN: 'AutoRespawn'
     };
 
     // Assign to global scope
     globalScope.PettyConfig = {
       PHYSICS,
       DISPLAY,
+      SPEED,
       ANIMATION,
       SPECIES,
       TAG_EMOJI,
