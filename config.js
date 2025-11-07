@@ -4,7 +4,7 @@
  * Physics Constants
  * Used by background.js physics engine for pet movement and collision
  */
-export const PHYSICS = {
+const PHYSICS = {
   // Physics engine timing
   UPDATE_INTERVAL: 16, // ~60fps in milliseconds
   BROADCAST_INTERVAL: 50, // Sync interval for broadcasting pet states to tabs
@@ -31,7 +31,7 @@ export const PHYSICS = {
  * Pet Display Constants
  * Used for rendering and visual display of pets
  */
-export const DISPLAY = {
+const DISPLAY = {
   PET_SIZE: 64, // Pet image size in pixels (width and height)
   BASE_Z_INDEX: 999999, // Base z-index for pet elements (species.zIndex is added to this)
   PET_CLASS: 'petty-pet', // CSS class for pet elements
@@ -43,7 +43,7 @@ export const DISPLAY = {
  * Animation Constants
  * Used by AnimationsScheduler capability for random pet actions
  */
-export const ANIMATION = {
+const ANIMATION = {
   // Random animation scheduling
   INITIAL_DELAY_MAX: 15000, // Maximum initial delay before first random animation (ms)
   SCHEDULE_MIN_DELAY: 10000, // Minimum delay between random animations (ms)
@@ -59,7 +59,7 @@ export const ANIMATION = {
  * Species Data Constants
  * Configuration for species loading and management
  */
-export const SPECIES = {
+const SPECIES = {
   EXPECTED_COUNT: 43, // Expected number of species
   RESOURCES_PATH: 'Resources/Species/', // Path to species JSON files
   ASSETS_PATH: 'Resources/PetsAssets/', // Path to pet sprite assets
@@ -76,7 +76,7 @@ export const SPECIES = {
  * Tag Emoji Mapping
  * Emoji icons for each species tag/category
  */
-export const TAG_EMOJI = {
+const TAG_EMOJI = {
   'cats': '🐱',
   'dinos': '🦖',
   'water': '🐠',
@@ -100,7 +100,7 @@ export const TAG_EMOJI = {
  * Logging Configuration
  * Standardized logging prefixes and formats
  */
-export const LOG = {
+const LOG = {
   PREFIXES: {
     BACKGROUND: '[Background]',
     PET: '[Pet]',
@@ -116,7 +116,7 @@ export const LOG = {
  * Chrome Storage Keys
  * Keys used for Chrome sync storage
  */
-export const STORAGE_KEYS = {
+const STORAGE_KEYS = {
   GLOBAL_PETS: 'globalPets'
 };
 
@@ -124,7 +124,7 @@ export const STORAGE_KEYS = {
  * Message Types
  * Chrome runtime message types for communication between components
  */
-export const MESSAGE_TYPES = {
+const MESSAGE_TYPES = {
   GET_GLOBAL_PETS: 'GET_GLOBAL_PETS',
   UPDATE_VIEWPORT: 'UPDATE_VIEWPORT',
   UPDATE_PET_POSITION: 'UPDATE_PET_POSITION',
@@ -142,7 +142,7 @@ export const MESSAGE_TYPES = {
  * Default Animation Names
  * Standard animation identifiers used across species
  */
-export const DEFAULT_ANIMATIONS = {
+const DEFAULT_ANIMATIONS = {
   FRONT: 'front', // Default idle animation
   WALK: 'walk', // Default movement animation
   DRAG: 'drag', // Animation when being dragged
@@ -153,7 +153,7 @@ export const DEFAULT_ANIMATIONS = {
  * Capability Names
  * Standard capability identifiers for pet behaviors
  */
-export const CAPABILITIES = {
+const CAPABILITIES = {
   LINEAR_MOVEMENT: 'LinearMovement',
   ANIMATIONS_SCHEDULER: 'AnimationsScheduler',
   FLIP_HORIZONTALLY: 'FlipHorizontallyWhenGoingLeft',

@@ -101,4 +101,3 @@ if (typeof module !== 'undefined' && module.exports) {
   "trex_yellow",
   "ufo"
 ];
-}
