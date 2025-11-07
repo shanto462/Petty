@@ -1,113 +1,101 @@
 // Popup Controller - Pet management UI
 
+// Access configuration
+const { LOG, MESSAGE_TYPES, SPECIES, TAG_EMOJI } = window.PettyConfig;
+
 class PopupController {
   constructor() {
     this.speciesManager = null;
     this.globalPets = [];
     this.init();
   }
-  
+
   async init() {
-    console.log('[Popup] Initializing...');
-    
-    // Species manager is already loaded via popup.html script tag
-    this.speciesManager = new SpeciesManager();
-    await this.speciesManager.loadAllSpecies();
-    await this.loadGlobalPets();
-    this.renderSpeciesGrid();
-    this.updateUI(); // Update pet counts and totals
-    this.setupRemoveAll();
-    this.setupSearch();
-    this.updateSpeciesCount();
-    
-    const loadedCount = Object.keys(this.speciesManager.species).length;
-    console.log('[Popup] ✅ Ready! Loaded', loadedCount, '/ 43 species');
-    console.log('[Popup] Species:', Object.keys(this.speciesManager.species).sort().join(', '));
-    console.log('[Popup] Active pets:', this.globalPets.length);
-    
-    if (loadedCount < 43) {
-      console.warn('[Popup] ⚠️ Missing species! Expected 43, got', loadedCount);
+    console.log(LOG.PREFIXES.POPUP, 'Initializing...');
+
+    try {
+      // Use singleton instance of SpeciesManager
+      this.speciesManager = SpeciesManager.getInstance();
+      await this.speciesManager.loadAllSpecies();
+      await this.loadGlobalPets();
+      this.renderSpeciesGrid();
+      this.updateUI();
+      this.setupRemoveAll();
+      this.setupSearch();
+      this.updateSpeciesCount();
+
+      const loadedCount = Object.keys(this.speciesManager.species).length;
+      console.log(LOG.PREFIXES.POPUP, 'Ready! Loaded', loadedCount, '/', SPECIES.EXPECTED_COUNT, 'species');
+      console.log(LOG.PREFIXES.POPUP, 'Species:', Object.keys(this.speciesManager.species).sort().join(', '));
+      console.log(LOG.PREFIXES.POPUP, 'Active pets:', this.globalPets.length);
+
+      if (loadedCount < SPECIES.EXPECTED_COUNT) {
+        console.warn(LOG.PREFIXES.POPUP, 'Missing species! Expected', SPECIES.EXPECTED_COUNT, 'got', loadedCount);
+      }
+    } catch (error) {
+      console.error(LOG.PREFIXES.POPUP, 'Initialization error:', error);
+      this.showError('Failed to initialize. Please try again.');
     }
   }
   
   async loadGlobalPets() {
     try {
-      const response = await ChromeMessaging.sendMessage({ type: 'GET_GLOBAL_PETS' });
+      const response = await ChromeMessaging.sendMessage({ type: MESSAGE_TYPES.GET_GLOBAL_PETS });
       if (response && response.pets) {
         this.globalPets = response.pets;
       }
     } catch (error) {
-      console.error('[PopupController] Failed to load global pets:', error);
+      console.error(LOG.PREFIXES.POPUP, 'Failed to load global pets:', error);
+      throw error;
     }
   }
   
   renderSpeciesGrid() {
     const container = document.getElementById('species-grid');
     container.innerHTML = '';
-    
+
     const byTags = this.speciesManager.getSpeciesByTags();
-    
+
     // Automatically discover all tags and sort them
     const allTags = Object.keys(byTags).sort();
-    
-    // Emoji mapping for tags (defaults to 📦 if not found)
-    const tagEmoji = {
-      'cats': '🐱',
-      'dinos': '🦖',
-      'water': '🐠',
-      'jungle': '🦍',
-      'forest': '🦔',
-      'birds': '🦅',
-      'dogs': '🐕',
-      'bear': '🐻',
-      'farm': '🐄',
-      'plants': '🌻',
-      'pokèmon': '⚡',
-      'memes': '🎭',
-      'aliens': '👽',
-      'decorations': '🏠',
-      'emoji': '😊',
-      'slow motion': '🐌',
-      'other': '✨'
-    };
-    
+
     let totalRendered = 0;
-    
-    console.log('[Popup] Discovered tags:', allTags);
-    
+
+    console.log(LOG.PREFIXES.POPUP, 'Discovered tags:', allTags);
+
     allTags.forEach(tag => {
       if (!byTags[tag] || byTags[tag].length === 0) {
         return;
       }
-      
+
       const category = document.createElement('div');
       category.className = 'category';
-      
+
       const title = document.createElement('h3');
-      const emoji = tagEmoji[tag] || '📦';
+      const emoji = TAG_EMOJI[tag] || '📦';
       const count = byTags[tag].length;
       title.textContent = `${emoji} ${tag.charAt(0).toUpperCase() + tag.slice(1)} (${count})`;
       category.appendChild(title);
-      
+
       const grid = document.createElement('div');
       grid.className = 'pet-grid';
-      
+
       // Sort alphabetically within category
       const sortedSpecies = byTags[tag].sort((a, b) => a.id.localeCompare(b.id));
-      
-      console.log(`[Popup] Category ${tag}:`, sortedSpecies.map(s => s.id).join(', '));
-      
+
+      console.log(LOG.PREFIXES.POPUP, `Category ${tag}:`, sortedSpecies.map(s => s.id).join(', '));
+
       sortedSpecies.forEach(species => {
         const item = this.createSpeciesItem(species);
         grid.appendChild(item);
         totalRendered++;
       });
-      
+
       category.appendChild(grid);
       container.appendChild(category);
     });
-    
-    console.log('[Popup] ✅ Rendered', totalRendered, 'species in', allTags.length, 'categories');
+
+    console.log(LOG.PREFIXES.POPUP, 'Rendered', totalRendered, 'species in', allTags.length, 'categories');
   }
   
   createSpeciesItem(species) {
@@ -115,27 +103,28 @@ class PopupController {
     item.className = 'pet-item';
     item.dataset.species = species.id;
     item.title = species.id.replace(/_/g, ' ') + '\nClick to toggle on/off';
-    
+
     const img = document.createElement('img');
-    // Try multiple animation paths
-    const imagePaths = [
-      `${species.id}_${species.movementPath}-0.png`,
-      `${species.id}_front-0.png`,
-      `${species.id}_idle-0.png`
-    ];
-    
+
+    // Try multiple fallback image paths using configuration
     let imageIndex = 0;
-    img.src = chrome.runtime.getURL(`Resources/PetsAssets/${imagePaths[0]}`);
-    img.onerror = () => {
-      imageIndex++;
-      if (imageIndex < imagePaths.length) {
-        img.src = chrome.runtime.getURL(`Resources/PetsAssets/${imagePaths[imageIndex]}`);
+    const tryNextImage = () => {
+      if (imageIndex < SPECIES.FALLBACK_IMAGE_PATHS.length) {
+        const pathGenerator = SPECIES.FALLBACK_IMAGE_PATHS[imageIndex];
+        const imagePath = pathGenerator(species.id, species.movementPath || 'walk');
+        img.src = chrome.runtime.getURL(`${SPECIES.ASSETS_PATH}${imagePath}`);
+        imageIndex++;
       } else {
+        // All fallbacks failed, show text
         img.alt = species.id[0].toUpperCase();
         img.style.fontSize = '32px';
         img.style.lineHeight = '48px';
       }
     };
+
+    img.onerror = tryNextImage;
+    tryNextImage();
+
     item.appendChild(img);
     
     const name = document.createElement('div');
@@ -175,34 +164,36 @@ class PopupController {
   
   async addPet(speciesId) {
     try {
-      const response = await ChromeMessaging.sendMessage({ 
-        type: 'ADD_PET', 
-        species: speciesId 
+      const response = await ChromeMessaging.sendMessage({
+        type: MESSAGE_TYPES.ADD_PET,
+        species: speciesId
       });
       if (response && response.success) {
         await this.loadGlobalPets();
         this.updateUI();
       }
     } catch (error) {
-      console.error('[PopupController] Failed to add pet:', error);
+      console.error(LOG.PREFIXES.POPUP, 'Failed to add pet:', error);
+      this.showError('Failed to add pet. Please try again.');
     }
   }
-  
+
   async removePet(speciesId) {
     const pet = this.globalPets.find(p => p.species === speciesId);
     if (!pet) return;
-    
+
     try {
-      const response = await ChromeMessaging.sendMessage({ 
-        type: 'REMOVE_PET', 
-        petId: pet.id 
+      const response = await ChromeMessaging.sendMessage({
+        type: MESSAGE_TYPES.REMOVE_PET,
+        petId: pet.id
       });
       if (response && response.success) {
         await this.loadGlobalPets();
         this.updateUI();
       }
     } catch (error) {
-      console.error('[PopupController] Failed to remove pet:', error);
+      console.error(LOG.PREFIXES.POPUP, 'Failed to remove pet:', error);
+      this.showError('Failed to remove pet. Please try again.');
     }
   }
   
@@ -255,22 +246,21 @@ class PopupController {
       img.style.height = '24px';
       img.style.objectFit = 'contain';
       img.style.imageRendering = 'pixelated';
-      
-      const imagePaths = [
-        `${speciesId}_${species?.movementPath || 'walk'}-0.png`,
-        `${speciesId}_front-0.png`,
-        `${speciesId}_idle-0.png`
-      ];
-      
+
+      // Use fallback image paths from configuration
       let imageIndex = 0;
-      img.src = chrome.runtime.getURL(`Resources/PetsAssets/${imagePaths[0]}`);
-      img.onerror = () => {
-        imageIndex++;
-        if (imageIndex < imagePaths.length) {
-          img.src = chrome.runtime.getURL(`Resources/PetsAssets/${imagePaths[imageIndex]}`);
+      const tryNextImage = () => {
+        if (imageIndex < SPECIES.FALLBACK_IMAGE_PATHS.length) {
+          const pathGenerator = SPECIES.FALLBACK_IMAGE_PATHS[imageIndex];
+          const imagePath = pathGenerator(speciesId, species?.movementPath || 'walk');
+          img.src = chrome.runtime.getURL(`${SPECIES.ASSETS_PATH}${imagePath}`);
+          imageIndex++;
         }
       };
-      
+
+      img.onerror = tryNextImage;
+      tryNextImage();
+
       badge.appendChild(img);
       
       // Add name
@@ -297,13 +287,14 @@ class PopupController {
     document.getElementById('remove-all').onclick = async () => {
       if (confirm('Remove all pets from all tabs?')) {
         try {
-          const response = await ChromeMessaging.sendMessage({ type: 'REMOVE_ALL_PETS' });
+          const response = await ChromeMessaging.sendMessage({ type: MESSAGE_TYPES.REMOVE_ALL_PETS });
           if (response && response.success) {
             await this.loadGlobalPets();
             this.updateUI();
           }
         } catch (error) {
-          console.error('[PopupController] Failed to remove all pets:', error);
+          console.error(LOG.PREFIXES.POPUP, 'Failed to remove all pets:', error);
+          this.showError('Failed to remove all pets. Please try again.');
         }
       }
     };
@@ -344,17 +335,31 @@ class PopupController {
   
   updateSpeciesCount() {
     const totalSpecies = Object.keys(this.speciesManager.species).length;
-    const expectedSpecies = 43;
-    
+
     document.getElementById('species-count').textContent = totalSpecies;
     document.getElementById('shown-count').textContent = totalSpecies;
-    
+
     // Visual warning if not all species loaded
     const countEl = document.querySelector('.species-count');
-    if (totalSpecies < expectedSpecies) {
+    if (totalSpecies < SPECIES.EXPECTED_COUNT) {
       countEl.style.background = 'rgba(244, 67, 54, 0.3)';
-      countEl.innerHTML = `⚠️ Showing <strong id="shown-count">${totalSpecies}</strong> / <strong id="species-count">${expectedSpecies}</strong> species (Some failed to load!)`;
+      countEl.innerHTML = `⚠️ Showing <strong id="shown-count">${totalSpecies}</strong> / <strong id="species-count">${SPECIES.EXPECTED_COUNT}</strong> species (Some failed to load!)`;
     }
+  }
+
+  /**
+   * Display error message to user
+   */
+  showError(message) {
+    // Simple error display - could be enhanced with a modal or toast
+    const container = document.getElementById('species-grid');
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'padding: 20px; text-align: center; color: #ff6b6b; background: rgba(244, 67, 54, 0.2); border-radius: 8px; margin: 10px;';
+    errorDiv.textContent = message;
+    container.prepend(errorDiv);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => errorDiv.remove(), 5000);
   }
 }
 

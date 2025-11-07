@@ -1,5 +1,13 @@
 // Background Service Worker - Coordinates pets across all tabs
 
+// Load dependencies
+importScripts('species-list.js', 'config.js', 'species-validator.js');
+
+// Access configuration
+const { PHYSICS, DISPLAY, LOG, STORAGE_KEYS, MESSAGE_TYPES } = window.PettyConfig;
+const SPECIES_LIST = window.SPECIES_LIST;
+const { validateSpeciesData } = window.SpeciesValidator || {};
+
 class PetCoordinator {
   constructor() {
     this.globalPets = []; // Shared pet states
@@ -7,7 +15,7 @@ class PetCoordinator {
     this.physicsInterval = null;
     this.broadcastInterval = null;
     this.lastPhysicsUpdate = Date.now();
-    this.viewport = { width: 1920, height: 1080 }; // Default, updated by tabs
+    this.viewport = PHYSICS.DEFAULT_VIEWPORT; // Use configuration constant
     this.init();
   }
   
@@ -18,10 +26,10 @@ class PetCoordinator {
     await this.loadSpeciesData();
     
     // Load saved global pets
-    chrome.storage.sync.get(['globalPets'], (result) => {
-      if (result.globalPets) {
-        this.globalPets = result.globalPets;
-        console.log('[Background] Loaded', this.globalPets.length, 'global pets');
+    chrome.storage.sync.get([STORAGE_KEYS.GLOBAL_PETS], (result) => {
+      if (result[STORAGE_KEYS.GLOBAL_PETS]) {
+        this.globalPets = result[STORAGE_KEYS.GLOBAL_PETS];
+        console.log(LOG.PREFIXES.BACKGROUND, 'Loaded', this.globalPets.length, 'global pets');
       }
     });
     
@@ -39,85 +47,66 @@ class PetCoordinator {
   }
   
   async loadSpeciesData() {
-    // Complete list of all 43 species - MUST match species-manager.js
-    const speciesList = [
-      'ape',
-      'betta',
-      'cat',
-      'cat_black',
-      'cat_blue',
-      'cat_floppa',
-      'cat_gray',
-      'cat_grumpy',
-      'cat_house',
-      'cat_white',
-      'cayman718',
-      'cromulon',
-      'cromulon_pink',
-      'crow',
-      'crow_white',
-      'frog',
-      'frog_venom',
-      'gazebo',
-      'german',
-      'hedgehog',
-      'jeansbear',
-      'koala',
-      'koala_pirate',
-      'milo',
-      'mushroom',
-      'mushroom_amanita',
-      'mushroomwizard',
-      'nyan',
-      'panda',
-      'panda_vest',
-      'poop',
-      'sheep',
-      'sheep_black',
-      'sloth',
-      'sloth_swag',
-      'snail',
-      'snail_nicky',
-      'sunflower',
-      'trex',
-      'trex_blue',
-      'trex_violet',
-      'trex_yellow',
-      'ufo'
-    ];
-    
-    for (const id of speciesList) {
+    // Use auto-generated species list instead of hardcoded array
+    console.log(LOG.PREFIXES.BACKGROUND, 'Loading', SPECIES_LIST.length, 'species in parallel...');
+
+    // Load all species in parallel using Promise.all() for better performance
+    const loadPromises = SPECIES_LIST.map(async (id) => {
       try {
         // Add timestamp to URL to force bypass all caches
         const url = chrome.runtime.getURL(`Resources/Species/${id}.json`) + '?v=' + Date.now();
-        const response = await fetch(url, { 
+        const response = await fetch(url, {
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache' }
         });
         if (response.ok) {
-          this.speciesData[id] = await response.json();
+          const data = await response.json();
+
+          // Validate species data if validator is available
+          if (validateSpeciesData) {
+            const validation = validateSpeciesData(data, id);
+            if (!validation.valid) {
+              console.warn(LOG.PREFIXES.BACKGROUND, 'Validation errors for species:', id, validation.errors);
+              return { id, data: validation.data };
+            }
+            return { id, data: validation.data };
+          }
+
+          return { id, data };
         }
+        return null;
       } catch (e) {
-        console.warn('[Background] Failed to load species:', id, e);
+        console.warn(LOG.PREFIXES.BACKGROUND, 'Failed to load species:', id, e);
+        return null;
       }
-    }
-    
-    console.log('[Background] Loaded', Object.keys(this.speciesData).length, 'species for physics');
+    });
+
+    // Wait for all species to load
+    const results = await Promise.all(loadPromises);
+
+    // Store loaded species data
+    results.forEach(result => {
+      if (result && result.data) {
+        this.speciesData[result.id] = result.data;
+      }
+    });
+
+    console.log(LOG.PREFIXES.BACKGROUND, 'Loaded', Object.keys(this.speciesData).length, '/', SPECIES_LIST.length, 'species for physics');
   }
   
   handleMessage(message, sender, sendResponse) {
     let pet; // Shared variable for pet lookups
-    
+
     switch (message.type) {
-      case 'GET_GLOBAL_PETS':
+      case MESSAGE_TYPES.GET_GLOBAL_PETS:
         sendResponse({ pets: this.globalPets });
         break;
-        
-      case 'UPDATE_VIEWPORT':
+
+      case MESSAGE_TYPES.UPDATE_VIEWPORT:
         this.viewport = message.viewport;
         break;
-        
-      case 'UPDATE_PET_POSITION':
+
+      case MESSAGE_TYPES.UPDATE_PET_POSITION:
         pet = this.globalPets.find(p => p.id === message.petId);
         if (pet) {
           pet.position = message.position;
@@ -128,8 +117,8 @@ class PetCoordinator {
         }
         sendResponse({ success: true });
         break;
-        
-      case 'ADD_PET':
+
+      case MESSAGE_TYPES.ADD_PET:
         const species = this.speciesData[message.species];
         const newPet = {
           id: Math.random().toString(36).substr(2, 9),
@@ -152,25 +141,25 @@ class PetCoordinator {
         });
         this.globalPets.push(newPet);
         this.savePets();
-        this.broadcastToAllTabs({ type: 'PET_ADDED', pet: newPet });
+        this.broadcastToAllTabs({ type: MESSAGE_TYPES.PET_ADDED, pet: newPet });
         sendResponse({ success: true, pet: newPet });
         break;
-        
-      case 'REMOVE_PET':
+
+      case MESSAGE_TYPES.REMOVE_PET:
         this.globalPets = this.globalPets.filter(p => p.id !== message.petId);
         this.savePets();
-        this.broadcastToAllTabs({ type: 'PET_REMOVED', petId: message.petId });
+        this.broadcastToAllTabs({ type: MESSAGE_TYPES.PET_REMOVED, petId: message.petId });
         sendResponse({ success: true });
         break;
-        
-      case 'REMOVE_ALL_PETS':
+
+      case MESSAGE_TYPES.REMOVE_ALL_PETS:
         this.globalPets = [];
         this.savePets();
-        this.broadcastToAllTabs({ type: 'ALL_PETS_REMOVED' });
+        this.broadcastToAllTabs({ type: MESSAGE_TYPES.ALL_PETS_REMOVED });
         sendResponse({ success: true });
         break;
-        
-      case 'UPDATE_PET_STATE':
+
+      case MESSAGE_TYPES.UPDATE_PET_STATE:
         pet = this.globalPets.find(p => p.id === message.petId);
         if (pet) {
           Object.assign(pet, message.state);
@@ -187,29 +176,27 @@ class PetCoordinator {
   }
   
   startPhysicsEngine() {
-    // Run physics at 60fps in background
+    // Run physics at configured interval
     this.physicsInterval = setInterval(() => {
       const now = Date.now();
       const deltaTime = (now - this.lastPhysicsUpdate) / 1000; // Convert to seconds
       this.lastPhysicsUpdate = now;
-      
+
       // Update physics for all pets
       this.globalPets.forEach(pet => {
         if (pet.isDragging) return; // Skip if being dragged
-        
+
         const species = this.speciesData[pet.species];
         if (!species) return;
-        
-        // Speed calculation: species.speed * baseSpeed
-        // baseSpeed = 0.8 (slowed down by 2.5x from original 2.0)
-        const baseSpeed = 0.8;
-        const speed = (species.speed || 0) * baseSpeed;
-        const gravity = 0.5;
-        const bounce = 0.3;
-        const friction = 0.95;
-        
-        const maxX = this.viewport.width - 64;
-        const maxY = this.viewport.height - 64;
+
+        // Speed calculation using configuration constants
+        const speed = (species.speed || 0) * PHYSICS.BASE_SPEED;
+        const gravity = PHYSICS.GRAVITY;
+        const bounce = PHYSICS.BOUNCE;
+        const friction = PHYSICS.FRICTION;
+
+        const maxX = this.viewport.width - DISPLAY.PET_SIZE;
+        const maxY = this.viewport.height - DISPLAY.PET_SIZE;
         
         // Check if pet should be stationary (sleeping, eating, etc.)
         const isStationary = !pet.isMoving;
@@ -230,7 +217,7 @@ class PetCoordinator {
           
           // Apply friction on ground (stronger if stationary)
           if (isStationary) {
-            pet.velocity.x *= 0.8; // Strong friction for stationary animations
+            pet.velocity.x *= PHYSICS.STATIONARY_FRICTION;
           } else {
             pet.velocity.x *= friction;
           }
@@ -250,29 +237,29 @@ class PetCoordinator {
         // Apply linear movement ONLY if pet is in moving state
         // Direction changes only happen on wall bounces (like macOS)
         if (!isStationary && speed > 0 && pet.position.y >= maxY - 1) {
-          if (Math.abs(pet.velocity.x) < speed * 0.5) {
+          if (Math.abs(pet.velocity.x) < speed * PHYSICS.MIN_SPEED_THRESHOLD) {
             pet.velocity.x = pet.direction * speed;
           }
         }
-        
+
         // Stop horizontal movement if stationary and nearly stopped
-        if (isStationary && Math.abs(pet.velocity.x) < 0.1) {
+        if (isStationary && Math.abs(pet.velocity.x) < PHYSICS.STOP_THRESHOLD) {
           pet.velocity.x = 0;
         }
       });
-    }, 16); // ~60fps
+    }, PHYSICS.UPDATE_INTERVAL);
   }
   
   startBroadcast() {
-    // Broadcast all pet states every 50ms to keep tabs in sync
+    // Broadcast all pet states to keep tabs in sync
     this.broadcastInterval = setInterval(() => {
       if (this.globalPets.length > 0) {
-        this.broadcastToAllTabs({ 
-          type: 'SYNC_ALL_PETS', 
-          pets: this.globalPets 
+        this.broadcastToAllTabs({
+          type: MESSAGE_TYPES.SYNC_ALL_PETS,
+          pets: this.globalPets
         });
       }
-    }, 50);
+    }, PHYSICS.BROADCAST_INTERVAL);
   }
   
   broadcastToAllTabs(message) {
@@ -286,7 +273,7 @@ class PetCoordinator {
   }
   
   savePets() {
-    chrome.storage.sync.set({ globalPets: this.globalPets });
+    chrome.storage.sync.set({ [STORAGE_KEYS.GLOBAL_PETS]: this.globalPets });
   }
 }
 

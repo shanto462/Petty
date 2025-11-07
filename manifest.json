@@ -11,6 +11,9 @@
     {
       "matches": ["<all_urls>"],
       "js": [
+        "species-list.js",
+        "config.js",
+        "species-validator.js",
         "chrome-messaging.js",
         "species-manager.js",
         "sprite-animator.js",
