@@ -11,6 +11,7 @@
     {
       "matches": ["<all_urls>"],
       "js": [
+        "chrome-messaging.js",
         "species-manager.js",
         "sprite-animator.js",
         "pet.js",

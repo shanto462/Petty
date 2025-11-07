@@ -112,14 +112,14 @@ class Pet {
     }
     
     // Notify background of animation change (for movement control)
-    chrome.runtime.sendMessage({
+    ChromeMessaging.sendMessage({
       type: 'UPDATE_PET_STATE',
       petId: this.id,
       state: {
         currentAnimation: animationId,
         isMoving: (animationId === this.movementPath)
       }
-    });
+    }).catch(() => {}); // Ignore errors for fire-and-forget messages
   }
   
   scheduleNextAnimation() {
@@ -251,12 +251,12 @@ class Pet {
     this.updatePosition();
     
     // Send position update while dragging
-    chrome.runtime.sendMessage({
+    ChromeMessaging.sendMessage({
       type: 'UPDATE_PET_POSITION',
       petId: this.id,
       position: this.position,
       isDragging: true
-    });
+    }).catch(() => {}); // Ignore errors
   }
   
   onMouseUp(e) {
@@ -265,12 +265,12 @@ class Pet {
     this.element.classList.remove('dragging');
     
     // Send position update to background and notify that dragging stopped
-    chrome.runtime.sendMessage({
+    ChromeMessaging.sendMessage({
       type: 'UPDATE_PET_POSITION',
       petId: this.id,
       position: this.position,
       isDragging: false
-    });
+    }).catch(() => {}); // Ignore errors
     
     // Resume movement (setAnimation will notify background of isMoving state)
     if (this.hasCapability('LinearMovement') && this.speed > 0) {
@@ -282,7 +282,7 @@ class Pet {
   
   syncState() {
     // Periodically send state to background (throttled)
-    chrome.runtime.sendMessage({
+    ChromeMessaging.sendMessage({
       type: 'UPDATE_PET_STATE',
       petId: this.id,
       state: {
@@ -290,7 +290,7 @@ class Pet {
         velocity: this.velocity,
         direction: this.direction
       }
-    });
+    }).catch(() => {}); // Ignore errors for fire-and-forget messages
   }
   
   destroy() {

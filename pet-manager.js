@@ -24,18 +24,24 @@ class PetManager {
       
       if (this.enabled) {
         // Get global pets from background
-        chrome.runtime.sendMessage({ type: 'GET_GLOBAL_PETS' }, (response) => {
-          if (response && response.pets) {
-            response.pets.forEach(petData => {
-              this.createPetFromData(petData);
-            });
-          }
-          
-          // Start update loop
-          this.startUpdateLoop();
-          
-          console.log('[PetManager] ✅ Ready! Active pets:', this.pets.length);
-        });
+        ChromeMessaging.sendMessage({ type: 'GET_GLOBAL_PETS' })
+          .then((response) => {
+            if (response && response.pets) {
+              response.pets.forEach(petData => {
+                this.createPetFromData(petData);
+              });
+            }
+            
+            // Start update loop
+            this.startUpdateLoop();
+            
+            console.log('[PetManager] ✅ Ready! Active pets:', this.pets.length);
+          })
+          .catch((error) => {
+            console.error('[PetManager] Failed to get global pets:', error);
+            // Still start update loop
+            this.startUpdateLoop();
+          });
       }
     });
     
@@ -56,13 +62,13 @@ class PetManager {
   }
   
   sendViewportUpdate() {
-    chrome.runtime.sendMessage({
+    ChromeMessaging.sendMessage({
       type: 'UPDATE_VIEWPORT',
       viewport: {
         width: window.innerWidth,
         height: window.innerHeight
       }
-    });
+    }).catch(() => {}); // Ignore errors for fire-and-forget messages
   }
   
   handleBackgroundMessage(message) {

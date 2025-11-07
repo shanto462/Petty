@@ -39,17 +39,51 @@ class PetCoordinator {
   }
   
   async loadSpeciesData() {
-    // Load ALL species - must match species-manager.js list
+    // Complete list of all 43 species - MUST match species-manager.js
     const speciesList = [
-      'ape', 'betta', 'cat', 'cat_black', 'cat_blue', 'cat_floppa', 
-      'cat_gray', 'cat_grumpy', 'cat_house', 'cat_white',
-      'cayman718', 'cromulon_pink', 'cromulon', 'crow_white', 'crow',
-      'frog_venom', 'frog', 'gazebo', 'german', 'hedgehog',
-      'jeansbear', 'koala_pirate', 'koala', 'milo', 
-      'mushroom_amanita', 'mushroom', 'mushroomwizard', 'nyan',
-      'panda_vest', 'panda', 'poop', 'sheep_black', 'sheep',
-      'sloth_swag', 'sloth', 'snail_nicky', 'snail', 'sunflower',
-      'trex_blue', 'trex_violet', 'trex_yellow', 'trex', 'ufo'
+      'ape',
+      'betta',
+      'cat',
+      'cat_black',
+      'cat_blue',
+      'cat_floppa',
+      'cat_gray',
+      'cat_grumpy',
+      'cat_house',
+      'cat_white',
+      'cayman718',
+      'cromulon',
+      'cromulon_pink',
+      'crow',
+      'crow_white',
+      'frog',
+      'frog_venom',
+      'gazebo',
+      'german',
+      'hedgehog',
+      'jeansbear',
+      'koala',
+      'koala_pirate',
+      'milo',
+      'mushroom',
+      'mushroom_amanita',
+      'mushroomwizard',
+      'nyan',
+      'panda',
+      'panda_vest',
+      'poop',
+      'sheep',
+      'sheep_black',
+      'sloth',
+      'sloth_swag',
+      'snail',
+      'snail_nicky',
+      'sunflower',
+      'trex',
+      'trex_blue',
+      'trex_violet',
+      'trex_yellow',
+      'ufo'
     ];
     
     for (const id of speciesList) {

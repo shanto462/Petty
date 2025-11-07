@@ -27,19 +27,27 @@ class PopupController {
     this.renderSpeciesGrid();
     this.setupToggle();
     this.setupRemoveAll();
+    this.setupSearch();
+    this.updateSpeciesCount();
     
-    console.log('[Popup] Ready!');
+    const loadedCount = Object.keys(this.speciesManager.species).length;
+    console.log('[Popup] ✅ Ready! Loaded', loadedCount, '/ 43 species');
+    console.log('[Popup] Species:', Object.keys(this.speciesManager.species).sort().join(', '));
+    
+    if (loadedCount < 43) {
+      console.warn('[Popup] ⚠️ Missing species! Expected 43, got', loadedCount);
+    }
   }
   
   async loadGlobalPets() {
-    return new Promise(resolve => {
-      chrome.runtime.sendMessage({ type: 'GET_GLOBAL_PETS' }, (response) => {
-        if (response && response.pets) {
-          this.globalPets = response.pets;
-        }
-        resolve();
-      });
-    });
+    try {
+      const response = await ChromeMessaging.sendMessage({ type: 'GET_GLOBAL_PETS' });
+      if (response && response.pets) {
+        this.globalPets = response.pets;
+      }
+    } catch (error) {
+      console.error('[PopupController] Failed to load global pets:', error);
+    }
   }
   
   renderSpeciesGrid() {
@@ -47,40 +55,95 @@ class PopupController {
     container.innerHTML = '';
     
     const byTags = this.speciesManager.getSpeciesByTags();
-    const tagOrder = ['cats', 'water', 'jungle', 'forest', 'memes', 'aliens', 'decorations', 'other'];
     
-    tagOrder.forEach(tag => {
-      if (!byTags[tag]) return;
+    // Automatically discover all tags and sort them
+    const allTags = Object.keys(byTags).sort();
+    
+    // Emoji mapping for tags (defaults to 📦 if not found)
+    const tagEmoji = {
+      'cats': '🐱',
+      'dinos': '🦖',
+      'water': '🐠',
+      'jungle': '🦍',
+      'forest': '🦔',
+      'birds': '🦅',
+      'dogs': '🐕',
+      'bear': '🐻',
+      'farm': '🐄',
+      'plants': '🌻',
+      'pokèmon': '⚡',
+      'memes': '🎭',
+      'aliens': '👽',
+      'decorations': '🏠',
+      'emoji': '😊',
+      'slow motion': '🐌',
+      'other': '✨'
+    };
+    
+    let totalRendered = 0;
+    
+    console.log('[Popup] Discovered tags:', allTags);
+    
+    allTags.forEach(tag => {
+      if (!byTags[tag] || byTags[tag].length === 0) {
+        return;
+      }
       
       const category = document.createElement('div');
       category.className = 'category';
       
       const title = document.createElement('h3');
-      title.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
+      const emoji = tagEmoji[tag] || '📦';
+      const count = byTags[tag].length;
+      title.textContent = `${emoji} ${tag.charAt(0).toUpperCase() + tag.slice(1)} (${count})`;
       category.appendChild(title);
       
       const grid = document.createElement('div');
       grid.className = 'pet-grid';
       
-      byTags[tag].forEach(species => {
+      // Sort alphabetically within category
+      const sortedSpecies = byTags[tag].sort((a, b) => a.id.localeCompare(b.id));
+      
+      console.log(`[Popup] Category ${tag}:`, sortedSpecies.map(s => s.id).join(', '));
+      
+      sortedSpecies.forEach(species => {
         const item = this.createSpeciesItem(species);
         grid.appendChild(item);
+        totalRendered++;
       });
       
       category.appendChild(grid);
       container.appendChild(category);
     });
+    
+    console.log('[Popup] ✅ Rendered', totalRendered, 'species in', allTags.length, 'categories');
   }
   
   createSpeciesItem(species) {
     const item = document.createElement('div');
     item.className = 'pet-item';
     item.dataset.species = species.id;
+    item.title = species.id.replace(/_/g, ' ') + '\nLeft-click: Add | Right-click: Remove';
     
     const img = document.createElement('img');
-    img.src = chrome.runtime.getURL(`Resources/PetsAssets/${species.id}_front-0.png`);
+    // Try multiple animation paths
+    const imagePaths = [
+      `${species.id}_${species.movementPath}-0.png`,
+      `${species.id}_front-0.png`,
+      `${species.id}_idle-0.png`
+    ];
+    
+    let imageIndex = 0;
+    img.src = chrome.runtime.getURL(`Resources/PetsAssets/${imagePaths[0]}`);
     img.onerror = () => {
-      img.src = chrome.runtime.getURL(`Resources/PetsAssets/${species.id}_idle-0.png`);
+      imageIndex++;
+      if (imageIndex < imagePaths.length) {
+        img.src = chrome.runtime.getURL(`Resources/PetsAssets/${imagePaths[imageIndex]}`);
+      } else {
+        img.alt = species.id[0].toUpperCase();
+        img.style.fontSize = '32px';
+        img.style.lineHeight = '48px';
+      }
     };
     item.appendChild(img);
     
@@ -112,31 +175,37 @@ class PopupController {
     return this.globalPets.filter(p => p.species === speciesId).length;
   }
   
-  addPet(speciesId) {
-    chrome.runtime.sendMessage({ 
-      type: 'ADD_PET', 
-      species: speciesId 
-    }, async (response) => {
+  async addPet(speciesId) {
+    try {
+      const response = await ChromeMessaging.sendMessage({ 
+        type: 'ADD_PET', 
+        species: speciesId 
+      });
       if (response && response.success) {
         await this.loadGlobalPets();
         this.updateUI();
       }
-    });
+    } catch (error) {
+      console.error('[PopupController] Failed to add pet:', error);
+    }
   }
   
-  removePet(speciesId) {
+  async removePet(speciesId) {
     const pet = this.globalPets.find(p => p.species === speciesId);
     if (!pet) return;
     
-    chrome.runtime.sendMessage({ 
-      type: 'REMOVE_PET', 
-      petId: pet.id 
-    }, async (response) => {
+    try {
+      const response = await ChromeMessaging.sendMessage({ 
+        type: 'REMOVE_PET', 
+        petId: pet.id 
+      });
       if (response && response.success) {
         await this.loadGlobalPets();
         this.updateUI();
       }
-    });
+    } catch (error) {
+      console.error('[PopupController] Failed to remove pet:', error);
+    }
   }
   
   updateUI() {
@@ -188,16 +257,67 @@ class PopupController {
   }
   
   setupRemoveAll() {
-    document.getElementById('remove-all').onclick = () => {
+    document.getElementById('remove-all').onclick = async () => {
       if (confirm('Remove all pets from all tabs?')) {
-        chrome.runtime.sendMessage({ type: 'REMOVE_ALL_PETS' }, async (response) => {
+        try {
+          const response = await ChromeMessaging.sendMessage({ type: 'REMOVE_ALL_PETS' });
           if (response && response.success) {
             await this.loadGlobalPets();
             this.updateUI();
           }
-        });
+        } catch (error) {
+          console.error('[PopupController] Failed to remove all pets:', error);
+        }
       }
     };
+  }
+  
+  setupSearch() {
+    const searchInput = document.getElementById('search');
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      this.filterSpecies(query);
+    });
+  }
+  
+  filterSpecies(query) {
+    const categories = document.querySelectorAll('.category');
+    let visibleCount = 0;
+    
+    categories.forEach(category => {
+      const items = category.querySelectorAll('.pet-item');
+      let categoryHasVisible = false;
+      
+      items.forEach(item => {
+        const name = item.dataset.species.toLowerCase();
+        const shouldShow = !query || name.includes(query);
+        
+        item.style.display = shouldShow ? 'block' : 'none';
+        if (shouldShow) {
+          categoryHasVisible = true;
+          visibleCount++;
+        }
+      });
+      
+      category.style.display = categoryHasVisible ? 'block' : 'none';
+    });
+    
+    document.getElementById('shown-count').textContent = visibleCount;
+  }
+  
+  updateSpeciesCount() {
+    const totalSpecies = Object.keys(this.speciesManager.species).length;
+    const expectedSpecies = 43;
+    
+    document.getElementById('species-count').textContent = totalSpecies;
+    document.getElementById('shown-count').textContent = totalSpecies;
+    
+    // Visual warning if not all species loaded
+    const countEl = document.querySelector('.species-count');
+    if (totalSpecies < expectedSpecies) {
+      countEl.style.background = 'rgba(244, 67, 54, 0.3)';
+      countEl.innerHTML = `⚠️ Showing <strong id="shown-count">${totalSpecies}</strong> / <strong id="species-count">${expectedSpecies}</strong> species (Some failed to load!)`;
+    }
   }
 }
 
