@@ -25,7 +25,7 @@ class Pet {
     // State
     this.position = { x: Math.random() * (window.innerWidth - 100), y: 0 };
     this.velocity = { x: 0, y: 0 };
-    this.direction = Math.random() > 0.5 ? 1 : -1;
+    this.direction = 1; // Always start right (like macOS), gets synced from background anyway
     this.isDragging = false;
     this.isGrounded = false;
     this.currentAnimation = 'front';
@@ -100,11 +100,15 @@ class Pet {
   async setAnimation(animationId) {
     if (this.currentAnimation === animationId) return;
     this.currentAnimation = animationId;
-    await this.animator.setAnimation(animationId);
     
-    // Immediately display the first frame
-    if (this.img && this.animator.getCurrentFrameUrl()) {
-      this.img.src = this.animator.getCurrentFrameUrl();
+    const frames = await this.animator.setAnimation(animationId);
+    
+    // Immediately display the first frame if available
+    if (this.img && frames && frames.length > 0) {
+      this.img.src = frames[0];
+      console.log('[Pet]', this.speciesId, '→', animationId, '(', frames.length, 'frames)');
+    } else {
+      console.warn('[Pet]', this.speciesId, '→', animationId, 'FAILED - no frames');
     }
     
     // Notify background of animation change (for movement control)
@@ -116,8 +120,6 @@ class Pet {
         isMoving: (animationId === this.movementPath)
       }
     });
-    
-    console.log('[Pet]', this.speciesId, '→', animationId);
   }
   
   scheduleNextAnimation() {

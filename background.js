@@ -39,9 +39,17 @@ class PetCoordinator {
   }
   
   async loadSpeciesData() {
+    // Load ALL species - must match species-manager.js list
     const speciesList = [
       'ape', 'betta', 'cat', 'cat_black', 'cat_blue', 'cat_floppa', 
-      'cat_gray', 'cat_grumpy', 'cat_house', 'cat_white'
+      'cat_gray', 'cat_grumpy', 'cat_house', 'cat_white',
+      'cayman718', 'cromulon_pink', 'cromulon', 'crow_white', 'crow',
+      'frog_venom', 'frog', 'gazebo', 'german', 'hedgehog',
+      'jeansbear', 'koala_pirate', 'koala', 'milo', 
+      'mushroom_amanita', 'mushroom', 'mushroomwizard', 'nyan',
+      'panda_vest', 'panda', 'poop', 'sheep_black', 'sheep',
+      'sloth_swag', 'sloth', 'snail_nicky', 'snail', 'sunflower',
+      'trex_blue', 'trex_violet', 'trex_yellow', 'trex', 'ufo'
     ];
     
     for (const id of speciesList) {
@@ -52,9 +60,11 @@ class PetCoordinator {
           this.speciesData[id] = await response.json();
         }
       } catch (e) {
-        // Ignore errors
+        console.warn('[Background] Failed to load species:', id, e);
       }
     }
+    
+    console.log('[Background] Loaded', Object.keys(this.speciesData).length, 'species for physics');
   }
   
   handleMessage(message, sender, sendResponse) {
@@ -91,7 +101,7 @@ class PetCoordinator {
             y: Math.random() * (this.viewport.height * 0.4) + 50 // Random height between 50 and 40% of viewport
           },
           velocity: { x: 0, y: 0 },
-          direction: Math.random() > 0.5 ? 1 : -1, // Random initial direction
+          direction: 1, // Always start going right (like macOS), natural desync from wall bounces
           isDragging: false,
           isMoving: species?.capabilities?.includes('LinearMovement') || false,
           currentAnimation: species?.movementPath || 'front'
@@ -152,10 +162,9 @@ class PetCoordinator {
         const species = this.speciesData[pet.species];
         if (!species) return;
         
-        // Speed calculation similar to macOS: species.speed * baseSpeed * sizeFactor
-        // baseSpeed = 2.0 (adjusted for browser px/frame at 60fps)
-        // sizeFactor = 64/64 = 1.0 (our pet size / default size)
-        const baseSpeed = 2.0;
+        // Speed calculation: species.speed * baseSpeed
+        // baseSpeed = 0.8 (slowed down by 2.5x from original 2.0)
+        const baseSpeed = 0.8;
         const speed = (species.speed || 0) * baseSpeed;
         const gravity = 0.5;
         const bounce = 0.3;
@@ -201,21 +210,10 @@ class PetCoordinator {
         }
         
         // Apply linear movement ONLY if pet is in moving state
+        // Direction changes only happen on wall bounces (like macOS)
         if (!isStationary && speed > 0 && pet.position.y >= maxY - 1) {
           if (Math.abs(pet.velocity.x) < speed * 0.5) {
             pet.velocity.x = pet.direction * speed;
-          }
-          
-          // Randomly change direction occasionally (like real animals exploring)
-          if (!pet.randomDirectionTimer || Date.now() - pet.randomDirectionTimer > (pet.directionChangeInterval || 0)) {
-            // Set next direction change time (30-90 seconds)
-            pet.directionChangeInterval = 30000 + Math.random() * 60000;
-            pet.randomDirectionTimer = Date.now();
-            
-            // 20% chance to change direction
-            if (Math.random() < 0.2) {
-              pet.direction *= -1;
-            }
           }
         }
         
