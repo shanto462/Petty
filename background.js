@@ -82,14 +82,26 @@ class PetCoordinator {
         break;
         
       case 'ADD_PET':
+        const species = this.speciesData[message.species];
         const newPet = {
           id: Math.random().toString(36).substr(2, 9),
           species: message.species,
-          position: { x: Math.random() * 800, y: 100 },
+          position: { 
+            x: Math.random() * (this.viewport.width * 0.6) + this.viewport.width * 0.2, // 20-80% of width
+            y: Math.random() * (this.viewport.height * 0.4) + 50 // Random height between 50 and 40% of viewport
+          },
           velocity: { x: 0, y: 0 },
-          direction: 1,
-          isDragging: false
+          direction: Math.random() > 0.5 ? 1 : -1, // Random initial direction
+          isDragging: false,
+          isMoving: species?.capabilities?.includes('LinearMovement') || false,
+          currentAnimation: species?.movementPath || 'front'
         };
+        console.log('[Background] Adding pet:', message.species, {
+          speed: species?.speed,
+          fps: species?.fps,
+          movementPath: species?.movementPath,
+          zIndex: species?.zIndex
+        });
         this.globalPets.push(newPet);
         this.savePets();
         this.broadcastToAllTabs({ type: 'PET_ADDED', pet: newPet });
@@ -140,7 +152,11 @@ class PetCoordinator {
         const species = this.speciesData[pet.species];
         if (!species) return;
         
-        const speed = species.speed || 0;
+        // Speed calculation similar to macOS: species.speed * baseSpeed * sizeFactor
+        // baseSpeed = 2.0 (adjusted for browser px/frame at 60fps)
+        // sizeFactor = 64/64 = 1.0 (our pet size / default size)
+        const baseSpeed = 2.0;
+        const speed = (species.speed || 0) * baseSpeed;
         const gravity = 0.5;
         const bounce = 0.3;
         const friction = 0.95;
@@ -148,7 +164,10 @@ class PetCoordinator {
         const maxX = this.viewport.width - 64;
         const maxY = this.viewport.height - 64;
         
-        // Apply gravity
+        // Check if pet should be stationary (sleeping, eating, etc.)
+        const isStationary = !pet.isMoving;
+        
+        // Apply gravity (always, unless stationary and on ground)
         if (pet.position.y < maxY) {
           pet.velocity.y += gravity;
         }
@@ -161,7 +180,13 @@ class PetCoordinator {
         if (pet.position.y >= maxY) {
           pet.position.y = maxY;
           pet.velocity.y = 0;
-          pet.velocity.x *= friction; // Apply friction on ground
+          
+          // Apply friction on ground (stronger if stationary)
+          if (isStationary) {
+            pet.velocity.x *= 0.8; // Strong friction for stationary animations
+          } else {
+            pet.velocity.x *= friction;
+          }
         }
         
         // Wall collisions with bounce
@@ -175,11 +200,28 @@ class PetCoordinator {
           pet.direction = -1;
         }
         
-        // Apply linear movement if has speed and on ground
-        if (speed > 0 && pet.position.y >= maxY - 1) {
+        // Apply linear movement ONLY if pet is in moving state
+        if (!isStationary && speed > 0 && pet.position.y >= maxY - 1) {
           if (Math.abs(pet.velocity.x) < speed * 0.5) {
             pet.velocity.x = pet.direction * speed;
           }
+          
+          // Randomly change direction occasionally (like real animals exploring)
+          if (!pet.randomDirectionTimer || Date.now() - pet.randomDirectionTimer > (pet.directionChangeInterval || 0)) {
+            // Set next direction change time (30-90 seconds)
+            pet.directionChangeInterval = 30000 + Math.random() * 60000;
+            pet.randomDirectionTimer = Date.now();
+            
+            // 20% chance to change direction
+            if (Math.random() < 0.2) {
+              pet.direction *= -1;
+            }
+          }
+        }
+        
+        // Stop horizontal movement if stationary and nearly stopped
+        if (isStationary && Math.abs(pet.velocity.x) < 0.1) {
+          pet.velocity.x = 0;
         }
       });
     }, 16); // ~60fps

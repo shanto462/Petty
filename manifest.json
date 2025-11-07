@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Desktop Pets - Petty",
+  "name": "Browser Pets - Petty",
   "version": "2.0.0",
-  "description": "40+ animated desktop pets for your browser! Cats, fish, frogs, and more. Drag, drop, and enjoy!",
+  "description": "40+ animated pets for your browser! Cats, fish, frogs, and more. Drag, drop, and enjoy!",
   "permissions": ["storage", "tabs"],
   "background": {
     "service_worker": "background.js"

@@ -7,7 +7,14 @@ class Pet {
     this.speciesData = speciesData;
     this.petManager = petManager;
     
-    // Properties from species data
+    // Properties from species JSON data - ALL properties are loaded and used:
+    // - speed: Movement velocity (multiplied by baseSpeed in background.js)
+    // - fps: Animation frame rate (used by SpriteAnimator)
+    // - movementPath: Walking animation ID (e.g., "walk")
+    // - dragPath: Animation when being dragged
+    // - zIndex: Stacking order (applied as 999999 + zIndex)
+    // - capabilities: Behavior capabilities
+    // - tags: Species categorization
     this.speed = speciesData.speed || 0;
     this.zIndex = speciesData.zIndex || 0;
     this.movementPath = speciesData.movementPath || 'walk';
@@ -40,7 +47,13 @@ class Pet {
   }
   
   create() {
-    console.log('[Pet]', this.speciesId, 'created with capabilities:', this.capabilities);
+    console.log('[Pet]', this.speciesId, 'created:', {
+      capabilities: this.capabilities,
+      speed: this.speed,
+      fps: this.speciesData.fps || 10,
+      movementPath: this.movementPath,
+      zIndex: this.zIndex
+    });
     
     // Create DOM element
     this.element = document.createElement('div');
@@ -65,14 +78,18 @@ class Pet {
     // Start with appropriate animation
     if (this.hasCapability('LinearMovement') && this.speed > 0) {
       this.setAnimation(this.movementPath);
-      this.velocity.x = this.direction * this.speed;
     } else {
       this.setAnimation('front');
     }
     
-    // Schedule animations if capable
+    // Schedule animations if capable - add random initial delay to desynchronize pets
     if (this.hasCapability('AnimationsScheduler')) {
-      this.scheduleNextAnimation();
+      const initialDelay = Math.random() * 15000; // 0-15 second initial offset
+      setTimeout(() => {
+        if (!this.isDragging && this.element) {
+          this.scheduleNextAnimation();
+        }
+      }, initialDelay);
     }
   }
   
@@ -90,13 +107,24 @@ class Pet {
       this.img.src = this.animator.getCurrentFrameUrl();
     }
     
+    // Notify background of animation change (for movement control)
+    chrome.runtime.sendMessage({
+      type: 'UPDATE_PET_STATE',
+      petId: this.id,
+      state: {
+        currentAnimation: animationId,
+        isMoving: (animationId === this.movementPath)
+      }
+    });
+    
     console.log('[Pet]', this.speciesId, '→', animationId);
   }
   
   scheduleNextAnimation() {
     if (this.animationTimer) clearTimeout(this.animationTimer);
     
-    const delay = 3000 + Math.random() * 5000; // 3-8 seconds
+    // Wide random range like macOS implementation (10-30 seconds)
+    const delay = 10000 + Math.random() * 20000;
     this.animationTimer = setTimeout(() => {
       this.chooseRandomAnimation();
     }, delay);
@@ -108,21 +136,23 @@ class Pet {
     const animations = this.speciesData.animations || [];
     if (animations.length === 0) return;
     
-    // Pick random animation
-    const anim = animations[Math.floor(Math.random() * animations.length)];
+    // Filter out movement animations from random selection (like macOS)
+    // Movement animation is played automatically, random animations should be actions
+    const actionAnimations = animations.filter(a => 
+      a.id !== this.movementPath && 
+      a.id !== this.dragPath &&
+      a.id !== 'front' // front is default idle, not a random action
+    );
+    
+    if (actionAnimations.length === 0) return;
+    
+    // Pick random animation (weighted toward longer animations for more variety)
+    const anim = actionAnimations[Math.floor(Math.random() * actionAnimations.length)];
+    console.log('[Pet]', this.speciesId, 'chose random animation:', anim.id, 'requiredLoops:', anim.requiredLoops);
     this.setAnimation(anim.id);
     
-    // Resume movement after animation completes
-    if (this.hasCapability('LinearMovement') && this.speed > 0) {
-      setTimeout(() => {
-        if (!this.isDragging) {
-          this.setAnimation(this.movementPath);
-          this.velocity.x = this.direction * this.speed;
-        }
-      }, 3000); // Give time for animation to play
-    }
-    
-    this.scheduleNextAnimation();
+    // DON'T schedule next animation yet - wait for this one to complete
+    // The update() method will call scheduleNextAnimation() when animation completes
   }
   
   update(timestamp) {
@@ -134,10 +164,17 @@ class Pet {
       this.img.src = result.frame;
     }
     
-    // If animation completed, return to movement
+    // If animation completed, return to movement and schedule next animation
     if (result && result.status === 'completed') {
+      console.log('[Pet]', this.speciesId, 'animation completed after', result.loops, 'loops');
+      
       if (this.hasCapability('LinearMovement') && this.speed > 0 && !this.isDragging) {
         this.setAnimation(this.movementPath);
+      }
+      
+      // Schedule next random animation
+      if (this.hasCapability('AnimationsScheduler') && !this.isDragging) {
+        this.scheduleNextAnimation();
       }
     }
     
@@ -150,26 +187,40 @@ class Pet {
       }
     }
     
+    // Check for interactions (only when in moving state)
+    if (this.hasCapability('GetsAngryWhenMeetingOtherCats') && this.currentAnimation === this.movementPath) {
+      this.checkAngryInteraction();
+    }
+    
     // Position is controlled by background worker, just render
     this.updatePosition();
   }
   
   checkAngryInteraction() {
+    if (this.isAngry) return; // Already angry or on cooldown
+    
     const nearbyPets = this.petManager.getPetsNear(this.position, 100);
     const nearbyCats = nearbyPets.filter(p => 
       p.id !== this.id && 
       p.tags.includes('cats')
     );
     
-    if (nearbyCats.length > 0 && !this.isAngry) {
+    if (nearbyCats.length > 0) {
       this.isAngry = true;
+      console.log('[Pet]', this.speciesId, 'getting angry at another cat!');
       this.setAnimation('angry');
+      
+      // Wait for animation to complete (using requiredLoops or timeout)
       setTimeout(() => {
-        this.isAngry = false;
-        if (this.hasCapability('LinearMovement') && this.speed > 0) {
+        if (this.hasCapability('LinearMovement') && this.speed > 0 && !this.isDragging) {
           this.setAnimation(this.movementPath);
         }
       }, 3000);
+      
+      // Cooldown - 30 seconds before can get angry again (like macOS)
+      setTimeout(() => {
+        this.isAngry = false;
+      }, 30000);
     }
   }
   
@@ -219,10 +270,9 @@ class Pet {
       isDragging: false
     });
     
-    // Resume movement
+    // Resume movement (setAnimation will notify background of isMoving state)
     if (this.hasCapability('LinearMovement') && this.speed > 0) {
       this.setAnimation(this.movementPath);
-      this.velocity.x = this.direction * this.speed;
     } else {
       this.setAnimation('front');
     }

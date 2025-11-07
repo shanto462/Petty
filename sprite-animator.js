@@ -50,9 +50,13 @@ class SpriteAnimator {
     this.currentAnimation = animationId;
     this.currentFrame = 0;
     this.loops = 0;
+    this.lastFrameTime = 0; // Reset timing
     
     const frames = await this.loadAnimation(animationId);
     this.frameCount = frames ? frames.length : 0;
+    
+    console.log('[SpriteAnimator]', this.speciesId, 'starting animation:', animationId, 
+                'frames:', this.frameCount, 'fps:', this.fps);
     
     return frames;
   }
@@ -75,8 +79,12 @@ class SpriteAnimator {
         
         // Check if animation has required loops
         const animData = this.speciesData.animations?.find(a => a.id === this.currentAnimation);
-        if (animData && animData.requiredLoops && this.loops >= animData.requiredLoops) {
-          return { status: 'completed', loops: this.loops };
+        if (animData && animData.requiredLoops) {
+          if (this.loops >= animData.requiredLoops) {
+            console.log('[SpriteAnimator]', this.speciesId, this.currentAnimation, 
+                        'completed after', this.loops, '/', animData.requiredLoops, 'loops');
+            return { status: 'completed', loops: this.loops };
+          }
         }
       }
     }
