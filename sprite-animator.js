@@ -20,42 +20,47 @@ class SpriteAnimator {
     if (this.frames[animationId]) {
       return this.frames[animationId];
     }
-    
+
     console.log('[SpriteAnimator] 🔄 Loading animation:', this.speciesId, animationId);
-    
-    const frames = [];
-    let index = 0;
-    
-    // Try loading frames: species_animation-index.png
-    // Stop immediately when first frame is not found (like macOS implementation)
-    while (index < 100) { // Max 100 frames per animation
+
+    // Use Image preloading instead of HEAD requests for faster loading
+    // Try loading frames in parallel up to a reasonable limit
+    const maxFrames = 100;
+    const loadPromises = [];
+
+    for (let index = 0; index < maxFrames; index++) {
       const path = `Resources/PetsAssets/${this.speciesId}_${animationId}-${index}.png`;
       const url = chrome.runtime.getURL(path);
-      
-      try {
-        // Test if file exists using fetch HEAD request (cleaner than Image loading)
-        const response = await fetch(url, { method: 'HEAD' });
-        if (!response.ok) {
-          // File doesn't exist, stop loading
-          break;
-        }
-        frames.push(url);
-        index++;
-      } catch (e) {
-        // Error fetching, stop loading
-        break;
-      }
+
+      loadPromises.push(
+        new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve({ index, url, success: true });
+          img.onerror = () => resolve({ index, url, success: false });
+          img.src = url;
+        })
+      );
     }
-    
+
+    // Wait for all parallel loads to complete
+    const results = await Promise.all(loadPromises);
+
+    // Collect only successful consecutive frames (stop at first missing frame)
+    const frames = [];
+    for (const result of results) {
+      if (!result.success) break; // Stop at first missing frame
+      frames.push(result.url);
+    }
+
     if (frames.length > 0) {
       this.frames[animationId] = frames;
       console.log('[SpriteAnimator] ✅', this.speciesId, animationId, '→', frames.length, 'frames');
     } else {
-      console.error('[SpriteAnimator] ❌', this.speciesId, animationId, '→ NO FRAMES FOUND!', 
+      console.error('[SpriteAnimator] ❌', this.speciesId, animationId, '→ NO FRAMES FOUND!',
                     '\nExpected:', `Resources/PetsAssets/${this.speciesId}_${animationId}-0.png`,
                     '\nCheck if sprite files exist in Resources/PetsAssets/');
     }
-    
+
     return frames;
   }
   

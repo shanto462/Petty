@@ -42,6 +42,7 @@
     this.animationTimer = null;
     this.angryTimer = null; // Track angry cooldown timer for cleanup
     this.lastPoopTime = 0; // For LeavesPoopStains capability
+    this.lastPositionUpdate = 0; // Throttle position updates to reduce messaging overhead
 
     // DOM & Animator
     this.element = null;
@@ -75,7 +76,35 @@
     this.img = document.createElement('img');
     this.img.style.width = `${DISPLAY.DEFAULT_PET_SIZE}px`;
     this.img.style.height = `${DISPLAY.DEFAULT_PET_SIZE}px`;
+
+    // Show placeholder while loading (prevents blank pet during sprite load)
+    this.img.style.background = 'transparent';
+    this.img.alt = '🐾'; // Screen reader accessibility
+
     this.element.appendChild(this.img);
+
+    // Add loading placeholder emoji
+    const placeholder = document.createElement('div');
+    placeholder.className = 'pet-loading-placeholder';
+    placeholder.textContent = '🐾';
+    placeholder.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: ${DISPLAY.DEFAULT_PET_SIZE * 0.6}px;
+      opacity: 0.5;
+      pointer-events: none;
+      user-select: none;
+    `;
+    this.element.appendChild(placeholder);
+
+    // Remove placeholder once first sprite loads
+    this.img.onload = () => {
+      if (placeholder && placeholder.parentNode) {
+        placeholder.remove();
+      }
+    };
 
     // Event listeners using bound references for proper cleanup
     this.element.addEventListener('mousedown', this.boundMouseDown);
@@ -355,6 +384,11 @@
     this.position.y = Math.max(0, Math.min(maxY, newY));
 
     this.updatePosition();
+
+    // Throttle position updates to reduce messaging overhead (max 20 updates/sec)
+    const now = Date.now();
+    if (now - this.lastPositionUpdate < 50) return;
+    this.lastPositionUpdate = now;
 
     // Send position update while dragging
     ChromeMessaging.sendMessage({

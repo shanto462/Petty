@@ -13,7 +13,7 @@
     const PHYSICS = {
       // Physics engine timing
       UPDATE_INTERVAL: 16, // ~60fps in milliseconds
-      BROADCAST_INTERVAL: 50, // Sync interval for broadcasting pet states to tabs
+      BROADCAST_INTERVAL: 100, // Sync interval for broadcasting pet states to tabs (reduced from 50ms to reduce overhead)
 
       // Physics parameters
       GRAVITY: 0.5,
