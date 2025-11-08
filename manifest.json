@@ -21,6 +21,7 @@
         "ephemeral-entity.js",
         "pet.js",
         "ufo-abduction-event.js",
+        "cloud-event.js",
         "pet-manager.js"
       ],
       "css": ["pet.css"],

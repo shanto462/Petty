@@ -87,6 +87,13 @@ class PetManager {
           UfoAbductionEvent.trigger(this);
         }
         break;
+
+      case 'TRIGGER_CLOUD_EVENT':
+        console.log('[PetManager] Cloud event triggered by background!');
+        if (typeof CloudEvent !== 'undefined') {
+          CloudEvent.trigger(this);
+        }
+        break;
     }
   }
   

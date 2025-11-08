@@ -21,8 +21,11 @@
         this.MAX_EVENT_DELAY_HOURS = 5; // 0-5 hours between events
         this.MAX_EVENT_DELAY_MS = this.MAX_EVENT_DELAY_HOURS * 60 * 60 * 1000;
 
-        // Available events (will be populated as we implement them)
-        this.events = [];
+        // Available events
+        this.events = [
+          { name: 'UFO Abduction', type: 'TRIGGER_UFO_ABDUCTION', weight: 1 },
+          { name: 'Fantozzi Cloud', type: 'TRIGGER_CLOUD_EVENT', weight: 1 }
+        ];
       }
 
       /**
@@ -82,12 +85,13 @@
           return;
         }
 
-        // Trigger UFO event (hardcoded for now, will add more events later)
-        console.log(LOG.PREFIXES.BACKGROUND, 'Triggering UFO Abduction event');
+        // Randomly select an event
+        const randomEvent = this.events[Math.floor(Math.random() * this.events.length)];
+        console.log(LOG.PREFIXES.BACKGROUND, 'Triggering random event:', randomEvent.name);
 
         // Broadcast to all tabs
         this.coordinator.broadcastToAllTabs({
-          type: 'TRIGGER_UFO_ABDUCTION'
+          type: randomEvent.type
         });
       }
 
