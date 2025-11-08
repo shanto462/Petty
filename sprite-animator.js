@@ -131,10 +131,28 @@ class SpriteAnimator {
 
         // Check if animation has required loops
         const animData = this.speciesData.animations?.find(a => a.id === this.currentAnimation);
-        if (animData && animData.requiredLoops) {
-          if (this.loops >= animData.requiredLoops) {
-            return { status: 'completed', loops: this.loops };
-          }
+        const requiredLoops = animData?.requiredLoops;
+
+        // Determine completion based on animation type:
+        // - Movement/drag animations (no requiredLoops): loop infinitely
+        // - Action animations (with requiredLoops): complete after N loops
+        // - Action animations (without requiredLoops): default to 4 loops (macOS behavior)
+        const isMovementOrDrag =
+          this.currentAnimation === this.speciesData.movementPath ||
+          this.currentAnimation === this.speciesData.dragPath;
+
+        let shouldComplete = false;
+        if (requiredLoops !== undefined) {
+          // Has explicit requiredLoops - use it
+          shouldComplete = this.loops >= requiredLoops;
+        } else if (!isMovementOrDrag) {
+          // Action animation without requiredLoops - default to 4 loops (like macOS angry animation)
+          shouldComplete = this.loops >= 4;
+        }
+        // else: movement/drag animations loop infinitely
+
+        if (shouldComplete) {
+          return { status: 'completed', loops: this.loops };
         }
       }
     }
