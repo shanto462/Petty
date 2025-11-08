@@ -161,7 +161,8 @@ importScripts('species-list.js', 'config.js', 'logger.js', 'species-validator.js
           direction: 1, // Always start going right (like macOS), natural desync from wall bounces
           isDragging: false,
           isMoving: species?.capabilities?.includes('LinearMovement') || false,
-          currentAnimation: species?.movementPath || 'front'
+          currentAnimation: species?.movementPath || 'front',
+          currentSize: null // Will be set when animation changes
         };
         logger.log('[Background] Adding pet:', message.species, {
           speed: species?.speed,
@@ -234,10 +235,19 @@ importScripts('species-list.js', 'config.js', 'logger.js', 'species-validator.js
         const friction = PHYSICS.FRICTION;
 
         // SleepingPlace entities are 2x size - account for this in boundary calculations
+        // Also account for animation-specific sizes (e.g., UFO bombing: 300x150)
         const isSleepingPlace = species.capabilities?.includes('SleepingPlace');
-        const entitySize = isSleepingPlace ? this.settings.petSize * 2 : this.settings.petSize;
-        const maxX = this.viewport.width - entitySize;
-        const maxY = this.viewport.height - entitySize;
+        let entityWidth = isSleepingPlace ? this.settings.petSize * 2 : this.settings.petSize;
+        let entityHeight = isSleepingPlace ? this.settings.petSize * 2 : this.settings.petSize;
+        
+        // Use current animation size if available (for scaled animations)
+        if (pet.currentSize) {
+          entityWidth = pet.currentSize.width;
+          entityHeight = pet.currentSize.height;
+        }
+        
+        const maxX = this.viewport.width - entityWidth;
+        const maxY = this.viewport.height - entityHeight;
 
         // Check if pet should be stationary (sleeping, eating, etc.)
         const isStationary = !pet.isMoving;

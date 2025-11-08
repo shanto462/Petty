@@ -164,6 +164,92 @@
       this.img.src = frames[0];
     }
 
+    // Apply animation-specific size if defined (e.g., UFO bombing: [4, 2], panda lightsaber: [1.42, 1.2])
+    const animData = this.animator.getAnimationData(animationId);
+    const previousSize = this.currentSize || { 
+      width: this.hasCapability(CAPABILITIES.SLEEPING_PLACE) ? DISPLAY.DEFAULT_PET_SIZE * 2 : DISPLAY.DEFAULT_PET_SIZE, 
+      height: this.hasCapability(CAPABILITIES.SLEEPING_PLACE) ? DISPLAY.DEFAULT_PET_SIZE * 2 : DISPLAY.DEFAULT_PET_SIZE 
+    };
+    
+    if (animData && animData.size && Array.isArray(animData.size)) {
+      const [widthMultiplier, heightMultiplier] = animData.size;
+      const newWidth = DISPLAY.DEFAULT_PET_SIZE * widthMultiplier;
+      const newHeight = DISPLAY.DEFAULT_PET_SIZE * heightMultiplier;
+      
+      // Adjust position to keep pet visually centered when size changes
+      // When growing: move pet left/up so it expands around its center
+      // When shrinking: move pet right/down to maintain visual center
+      const widthDiff = newWidth - previousSize.width;
+      const heightDiff = newHeight - previousSize.height;
+      
+      if (widthDiff !== 0 || heightDiff !== 0) {
+        this.position.x -= widthDiff / 2;
+        this.position.y -= heightDiff / 2;
+        
+        // Clamp to viewport bounds with new size
+        const maxX = window.innerWidth - newWidth;
+        const maxY = window.innerHeight - newHeight;
+        this.position.x = Math.max(0, Math.min(maxX, this.position.x));
+        this.position.y = Math.max(0, Math.min(maxY, this.position.y));
+        
+        // Sync with background
+        ChromeMessaging.sendMessage({
+          type: MESSAGE_TYPES.UPDATE_PET_POSITION,
+          petId: this.id,
+          position: this.position,
+          isDragging: false
+        }).catch(() => {});
+      }
+      
+      // Scale both container and image to prevent clipping
+      this.element.style.width = `${newWidth}px`;
+      this.element.style.height = `${newHeight}px`;
+      this.img.style.width = `${newWidth}px`;
+      this.img.style.height = `${newHeight}px`;
+      
+      // Store current size for physics calculations
+      this.currentSize = { width: newWidth, height: newHeight };
+      
+      logger.log(LOG.PREFIXES.PET, this.speciesId, 'animation', animationId, 
+                 'size:', `${newWidth}x${newHeight}`, `(${widthMultiplier}x${heightMultiplier})`);
+    } else {
+      // Reset to default size (handles SleepingPlace 2x size)
+      const defaultSize = this.hasCapability(CAPABILITIES.SLEEPING_PLACE)
+        ? DISPLAY.DEFAULT_PET_SIZE * 2
+        : DISPLAY.DEFAULT_PET_SIZE;
+      
+      // Adjust position when returning to default size
+      const widthDiff = defaultSize - previousSize.width;
+      const heightDiff = defaultSize - previousSize.height;
+      
+      if (widthDiff !== 0 || heightDiff !== 0) {
+        this.position.x -= widthDiff / 2;
+        this.position.y -= heightDiff / 2;
+        
+        // Clamp to viewport bounds
+        const maxX = window.innerWidth - defaultSize;
+        const maxY = window.innerHeight - defaultSize;
+        this.position.x = Math.max(0, Math.min(maxX, this.position.x));
+        this.position.y = Math.max(0, Math.min(maxY, this.position.y));
+        
+        // Sync with background
+        ChromeMessaging.sendMessage({
+          type: MESSAGE_TYPES.UPDATE_PET_POSITION,
+          petId: this.id,
+          position: this.position,
+          isDragging: false
+        }).catch(() => {});
+      }
+      
+      this.element.style.width = `${defaultSize}px`;
+      this.element.style.height = `${defaultSize}px`;
+      this.img.style.width = `${defaultSize}px`;
+      this.img.style.height = `${defaultSize}px`;
+      
+      // Store current size for physics calculations
+      this.currentSize = { width: defaultSize, height: defaultSize };
+    }
+
     // Show debug bubble
     if (DEBUG.SHOW_ACTION_BUBBLES) {
       this.showDebugBubble(animationId);
@@ -176,7 +262,8 @@
       petId: this.id,
       state: {
         currentAnimation: animationId,
-        isMoving: (animationId === this.movementPath && !this.isSleeping)
+        isMoving: (animationId === this.movementPath && !this.isSleeping),
+        currentSize: this.currentSize // Send current size for physics calculations
       }
     }).catch(() => {}); // Ignore errors for fire-and-forget messages
   }
@@ -236,10 +323,28 @@
       if (this.isSleeping) {
         logger.log(LOG.PREFIXES.PET, this.speciesId, 'waking up from sleep');
         this.isSleeping = false;
+        
+        // Notify background that pet can move again
+        ChromeMessaging.sendMessage({
+          type: MESSAGE_TYPES.UPDATE_PET_STATE,
+          petId: this.id,
+          state: {
+            isMoving: true
+          }
+        }).catch(() => {});
       }
 
       if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0 && !this.isDragging) {
         this.setAnimation(this.movementPath);
+        
+        // Ensure background knows pet is moving (redundant safety check)
+        ChromeMessaging.sendMessage({
+          type: MESSAGE_TYPES.UPDATE_PET_STATE,
+          petId: this.id,
+          state: {
+            isMoving: true
+          }
+        }).catch(() => {});
       }
 
       // Schedule next random animation
@@ -385,12 +490,13 @@
     pet.animator.setSleepLoops(loops);
 
     // Notify background that pet is sleeping (no longer moving)
+    // This is redundant with setAnimation above but ensures state sync
     ChromeMessaging.sendMessage({
       type: MESSAGE_TYPES.UPDATE_PET_STATE,
       petId: pet.id,
       state: {
         currentAnimation: sleepAnimation.id,
-        isMoving: false
+        isMoving: false  // Force stopped while sleeping
       }
     }).catch(() => {});
 
@@ -577,12 +683,11 @@
     let newY = e.clientY - this.dragOffset.y;
 
     // Apply boundary constraints to prevent dragging outside viewport
-    // Account for entity size (2x for sleeping places)
-    const entitySize = this.hasCapability(CAPABILITIES.SLEEPING_PLACE) 
-      ? DISPLAY.DEFAULT_PET_SIZE * 2 
-      : DISPLAY.DEFAULT_PET_SIZE;
-    const maxX = window.innerWidth - entitySize;
-    const maxY = window.innerHeight - entitySize;
+    // Use current animation size (accounts for scaled animations)
+    const entityWidth = this.currentSize?.width || DISPLAY.DEFAULT_PET_SIZE;
+    const entityHeight = this.currentSize?.height || DISPLAY.DEFAULT_PET_SIZE;
+    const maxX = window.innerWidth - entityWidth;
+    const maxY = window.innerHeight - entityHeight;
 
     this.position.x = Math.max(0, Math.min(maxX, newX));
     this.position.y = Math.max(0, Math.min(maxY, newY));
