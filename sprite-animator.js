@@ -15,6 +15,8 @@ class SpriteAnimator {
     this.loops = 0;
     this.frames = {}; // Cache: {animationId: [urls]}
     this.lastReturnedFrame = null; // Track last frame to avoid redundant updates
+    this.decodedImages = {}; // Cache decoded images for instant rendering
+    this.DEBUG = false; // Disable debug logging for performance
   }
   
   async loadAnimation(animationId) {
@@ -22,12 +24,11 @@ class SpriteAnimator {
       return this.frames[animationId];
     }
 
-    console.log('[SpriteAnimator] 🔄 Loading animation:', this.speciesId, animationId);
-
     // Load frames in smaller chunks to avoid overwhelming the browser
     const maxFrames = 100;
     const chunkSize = 20; // Load 20 frames at a time
     const frames = [];
+    const decodedCache = [];
 
     for (let chunkStart = 0; chunkStart < maxFrames; chunkStart += chunkSize) {
       const chunkEnd = Math.min(chunkStart + chunkSize, maxFrames);
@@ -38,10 +39,18 @@ class SpriteAnimator {
         const url = chrome.runtime.getURL(path);
 
         chunkPromises.push(
-          new Promise((resolve) => {
+          new Promise(async (resolve) => {
             const img = new Image();
-            img.onload = () => resolve({ index, url, success: true });
-            img.onerror = () => resolve({ index, url, success: false });
+            img.onload = async () => {
+              // Decode image for smoother rendering
+              try {
+                await img.decode();
+                resolve({ index, url, img, success: true });
+              } catch (e) {
+                resolve({ index, url, img, success: true }); // Still resolve if decode fails
+              }
+            };
+            img.onerror = () => resolve({ index, url, img: null, success: false });
             img.src = url;
           })
         );
@@ -58,6 +67,7 @@ class SpriteAnimator {
           break;
         }
         frames.push(result.url);
+        decodedCache.push(result.img);
       }
 
       // If we found a missing frame, stop loading more chunks
@@ -66,28 +76,25 @@ class SpriteAnimator {
 
     if (frames.length > 0) {
       this.frames[animationId] = frames;
-      console.log('[SpriteAnimator] ✅', this.speciesId, animationId, '→', frames.length, 'frames');
-    } else {
-      console.error('[SpriteAnimator] ❌', this.speciesId, animationId, '→ NO FRAMES FOUND!',
-                    '\nExpected:', `Resources/PetsAssets/${this.speciesId}_${animationId}-0.png`,
-                    '\nCheck if sprite files exist in Resources/PetsAssets/');
+      this.decodedImages[animationId] = decodedCache;
+    } else if (this.DEBUG) {
+      console.error('[SpriteAnimator] ❌', this.speciesId, animationId, '→ NO FRAMES');
     }
 
     return frames;
   }
   
   async setAnimation(animationId) {
-    console.log('[SpriteAnimator] setAnimation called:', this.speciesId, animationId);
     if (this.currentAnimation === animationId) return this.frames[animationId];
-    
+
     // Load frames first before changing animation
     const frames = await this.loadAnimation(animationId);
-    
+
     if (!frames || frames.length === 0) {
-      console.error('[SpriteAnimator] ❌ Cannot set animation', animationId, '- no frames loaded');
+      if (this.DEBUG) console.error('[SpriteAnimator] ❌ Cannot set animation', animationId);
       return null;
     }
-    
+
     // Now update state
     this.currentAnimation = animationId;
     this.currentFrame = 0;
@@ -95,9 +102,6 @@ class SpriteAnimator {
     this.lastFrameTime = 0; // Reset timing
     this.frameCount = frames.length;
     this.lastReturnedFrame = null; // Reset frame tracking
-
-    console.log('[SpriteAnimator] ✅ Started animation:', this.speciesId, animationId,
-                'frames:', this.frameCount, 'fps:', this.fps);
 
     return frames;
   }
@@ -129,8 +133,6 @@ class SpriteAnimator {
         const animData = this.speciesData.animations?.find(a => a.id === this.currentAnimation);
         if (animData && animData.requiredLoops) {
           if (this.loops >= animData.requiredLoops) {
-            console.log('[SpriteAnimator]', this.speciesId, this.currentAnimation,
-                        'completed after', this.loops, '/', animData.requiredLoops, 'loops');
             return { status: 'completed', loops: this.loops };
           }
         }

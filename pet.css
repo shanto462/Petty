@@ -27,6 +27,9 @@
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
+  backface-visibility: hidden; /* Prevent subpixel rendering issues */
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0); /* Force GPU acceleration */
 }
 
 /* Flipped sprite for left movement */

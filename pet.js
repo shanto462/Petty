@@ -62,14 +62,6 @@
   }
   
   create() {
-    console.log(LOG.PREFIXES.PET, this.speciesId, 'created:', {
-      capabilities: this.capabilities,
-      speed: this.speed,
-      fps: this.speciesData.fps || 10,
-      movementPath: this.movementPath,
-      zIndex: this.zIndex
-    });
-
     // Create DOM element
     this.element = document.createElement('div');
     this.element.className = DISPLAY.PET_CLASS;
@@ -149,9 +141,6 @@
     // Immediately display the first frame if available
     if (this.img && frames && frames.length > 0) {
       this.img.src = frames[0];
-      console.log(LOG.PREFIXES.PET, this.speciesId, '→', animationId, '(', frames.length, 'frames)');
-    } else {
-      console.warn(LOG.PREFIXES.PET, this.speciesId, '→', animationId, 'FAILED - no frames');
     }
 
     // Notify background of animation change (for movement control)
@@ -196,7 +185,6 @@
 
     // Pick random animation
     const anim = actionAnimations[Math.floor(Math.random() * actionAnimations.length)];
-    console.log(LOG.PREFIXES.PET, this.speciesId, 'chose random animation:', anim.id, 'requiredLoops:', anim.requiredLoops);
     this.setAnimation(anim.id);
 
     // Wait for animation to complete before scheduling next
@@ -215,8 +203,6 @@
 
     // If animation completed, return to movement and schedule next animation
     if (result && result.status === 'completed') {
-      console.log(LOG.PREFIXES.PET, this.speciesId, 'animation completed after', result.loops, 'loops');
-
       if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0 && !this.isDragging) {
         this.setAnimation(this.movementPath);
       }
