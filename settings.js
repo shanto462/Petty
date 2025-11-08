@@ -1,36 +1,44 @@
-// Settings Manager - Centralized settings with chrome.storage persistence
+// Settings Management - Centralized settings with chrome.storage persistence
+// This file provides a consistent API for settings but is optional -
+// settings are already managed inline in background.js and popup-controller.js
 
 (function() {
-  if (!window.PettySettings) {
-    const { DISPLAY, SPEED } = window.PettyConfig;
+  const globalScope = typeof window !== 'undefined' ? window : self;
 
+  if (!globalScope.PettySettings) {
+    const { DISPLAY, SPEED } = globalScope.PettyConfig || {};
+
+    /**
+     * Settings Manager (Optional Singleton)
+     * Note: Settings are already managed in background.js and popup-controller.js
+     * This provides a unified API if needed in the future
+     */
     class PettySettings {
       constructor() {
-        // Default settings (matching macOS defaults)
         this.defaults = {
-          petSize: DISPLAY.DEFAULT_PET_SIZE, // 75px
-          speedMultiplier: SPEED.DEFAULT_MULTIPLIER, // 1.0
+          petSize: DISPLAY?.DEFAULT_PET_SIZE || 75,
+          speedMultiplier: SPEED?.DEFAULT_MULTIPLIER || 1.0,
           gravityEnabled: true,
           randomEvents: true
         };
-
         this.current = { ...this.defaults };
-        this.listeners = []; // Callback functions for setting changes
+        this.listeners = [];
       }
 
       /**
        * Load settings from chrome.storage
        */
       async load() {
+        if (typeof chrome === 'undefined' || !chrome.storage) {
+          console.warn('[PettySettings] Chrome storage not available, using defaults');
+          return this.current;
+        }
+
         return new Promise((resolve) => {
           chrome.storage.sync.get(['pettySettings'], (result) => {
             if (result.pettySettings) {
               this.current = { ...this.defaults, ...result.pettySettings };
-              console.log('[Settings] Loaded:', this.current);
-            } else {
-              console.log('[Settings] Using defaults:', this.current);
             }
-            this.notifyListeners();
             resolve(this.current);
           });
         });
@@ -40,62 +48,84 @@
        * Save settings to chrome.storage
        */
       async save() {
+        if (typeof chrome === 'undefined' || !chrome.storage) {
+          console.warn('[PettySettings] Chrome storage not available');
+          return;
+        }
+
         return new Promise((resolve) => {
-          chrome.storage.sync.set({ pettySettings: this.current }, () => {
-            console.log('[Settings] Saved:', this.current);
-            resolve();
-          });
+          chrome.storage.sync.set({ pettySettings: this.current }, resolve);
         });
       }
 
       /**
-       * Get a setting value
-       */
-      get(key) {
-        return this.current[key] ?? this.defaults[key];
-      }
-
-      /**
-       * Set a setting value and save
+       * Set a specific setting
        */
       async set(key, value) {
         // Validate ranges
-        if (key === 'petSize') {
+        if (key === 'petSize' && DISPLAY) {
           value = Math.max(DISPLAY.MIN_PET_SIZE, Math.min(DISPLAY.MAX_PET_SIZE, value));
-        } else if (key === 'speedMultiplier') {
+        } else if (key === 'speedMultiplier' && SPEED) {
           value = Math.max(SPEED.MIN_MULTIPLIER, Math.min(SPEED.MAX_MULTIPLIER, value));
         }
 
         this.current[key] = value;
         await this.save();
-        this.notifyListeners();
+        this.notifyListeners(key, value);
       }
 
       /**
-       * Reset all settings to defaults
+       * Get a specific setting
+       */
+      get(key) {
+        return this.current[key];
+      }
+
+      /**
+       * Get all settings
+       */
+      getAll() {
+        return { ...this.current };
+      }
+
+      /**
+       * Reset to defaults
        */
       async reset() {
         this.current = { ...this.defaults };
         await this.save();
-        this.notifyListeners();
+        this.notifyListeners('all', this.current);
       }
 
       /**
-       * Add a listener for setting changes
+       * Add change listener
        */
-      onChange(callback) {
+      addListener(callback) {
         this.listeners.push(callback);
       }
 
       /**
-       * Notify all listeners of changes
+       * Remove change listener
        */
-      notifyListeners() {
-        this.listeners.forEach(callback => callback(this.current));
+      removeListener(callback) {
+        this.listeners = this.listeners.filter(l => l !== callback);
+      }
+
+      /**
+       * Notify all listeners
+       */
+      notifyListeners(key, value) {
+        this.listeners.forEach(callback => {
+          try {
+            callback(key, value);
+          } catch (error) {
+            console.error('[PettySettings] Listener error:', error);
+          }
+        });
       }
     }
 
-    // Create singleton instance
-    window.PettySettings = new PettySettings();
+    // Export as singleton (optional - not used by current implementation)
+    globalScope.PettySettings = new PettySettings();
   }
 })();
