@@ -176,31 +176,6 @@
       const newWidth = DISPLAY.DEFAULT_PET_SIZE * widthMultiplier;
       const newHeight = DISPLAY.DEFAULT_PET_SIZE * heightMultiplier;
       
-      // Adjust position to keep pet visually centered when size changes
-      // When growing: move pet left/up so it expands around its center
-      // When shrinking: move pet right/down to maintain visual center
-      const widthDiff = newWidth - previousSize.width;
-      const heightDiff = newHeight - previousSize.height;
-      
-      if (widthDiff !== 0 || heightDiff !== 0) {
-        this.position.x -= widthDiff / 2;
-        this.position.y -= heightDiff / 2;
-        
-        // Clamp to viewport bounds with new size
-        const maxX = window.innerWidth - newWidth;
-        const maxY = window.innerHeight - newHeight;
-        this.position.x = Math.max(0, Math.min(maxX, this.position.x));
-        this.position.y = Math.max(0, Math.min(maxY, this.position.y));
-        
-        // Sync with background
-        ChromeMessaging.sendMessage({
-          type: MESSAGE_TYPES.UPDATE_PET_POSITION,
-          petId: this.id,
-          position: this.position,
-          isDragging: false
-        }).catch(() => {});
-      }
-      
       // Scale both container and image to prevent clipping
       this.element.style.width = `${newWidth}px`;
       this.element.style.height = `${newHeight}px`;
@@ -217,29 +192,6 @@
       const defaultSize = this.hasCapability(CAPABILITIES.SLEEPING_PLACE)
         ? DISPLAY.DEFAULT_PET_SIZE * 2
         : DISPLAY.DEFAULT_PET_SIZE;
-      
-      // Adjust position when returning to default size
-      const widthDiff = defaultSize - previousSize.width;
-      const heightDiff = defaultSize - previousSize.height;
-      
-      if (widthDiff !== 0 || heightDiff !== 0) {
-        this.position.x -= widthDiff / 2;
-        this.position.y -= heightDiff / 2;
-        
-        // Clamp to viewport bounds
-        const maxX = window.innerWidth - defaultSize;
-        const maxY = window.innerHeight - defaultSize;
-        this.position.x = Math.max(0, Math.min(maxX, this.position.x));
-        this.position.y = Math.max(0, Math.min(maxY, this.position.y));
-        
-        // Sync with background
-        ChromeMessaging.sendMessage({
-          type: MESSAGE_TYPES.UPDATE_PET_POSITION,
-          petId: this.id,
-          position: this.position,
-          isDragging: false
-        }).catch(() => {});
-      }
       
       this.element.style.width = `${defaultSize}px`;
       this.element.style.height = `${defaultSize}px`;
@@ -496,16 +448,10 @@
       petId: pet.id,
       state: {
         currentAnimation: sleepAnimation.id,
-        isMoving: false  // Force stopped while sleeping
+        isMoving: false,  // Force stopped while sleeping
+        velocity: { x: 0, y: 0 }, // Stop all movement
+        position: pet.position // Sync new position on sleeping place
       }
-    }).catch(() => {});
-
-    // Also sync position to background
-    ChromeMessaging.sendMessage({
-      type: MESSAGE_TYPES.UPDATE_PET_POSITION,
-      petId: pet.id,
-      position: pet.position,
-      isDragging: false
     }).catch(() => {});
   }
 

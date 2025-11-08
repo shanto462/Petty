@@ -108,6 +108,22 @@ class PetManager {
           localPet.position = { ...globalPet.position };
           localPet.velocity = { ...globalPet.velocity };
           localPet.direction = globalPet.direction;
+          
+          // Sync animation state (critical for multi-tab sync!)
+          if (globalPet.currentAnimation && localPet.currentAnimation !== globalPet.currentAnimation) {
+            localPet.setAnimation(globalPet.currentAnimation);
+          }
+          
+          // Sync moving state
+          if (globalPet.isMoving !== undefined && localPet.isMoving !== globalPet.isMoving) {
+            localPet.isMoving = globalPet.isMoving;
+          }
+          
+          // Sync sleeping state
+          if (globalPet.isSleeping !== undefined && localPet.isSleeping !== globalPet.isSleeping) {
+            localPet.isSleeping = globalPet.isSleeping;
+          }
+          
           localPet.updatePosition();
         }
       }

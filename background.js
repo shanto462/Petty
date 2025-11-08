@@ -192,8 +192,33 @@ importScripts('species-list.js', 'config.js', 'logger.js', 'species-validator.js
 
       case MESSAGE_TYPES.UPDATE_PET_STATE:
         pet = this.globalPets.find(p => p.id === message.petId);
-        if (pet) {
+        if (pet && message.state) {
+          // Track previous size before updating state
+          const previousSize = pet.currentSize ? { ...pet.currentSize } : null;
+          
+          // Update pet state
           Object.assign(pet, message.state);
+          
+          // If size changed, adjust position to keep pet visually centered
+          if (message.state.currentSize && previousSize) {
+            const widthDiff = message.state.currentSize.width - previousSize.width;
+            const heightDiff = message.state.currentSize.height - previousSize.height;
+            
+            if (widthDiff !== 0 || heightDiff !== 0) {
+              // Adjust position to expand/shrink around center
+              pet.position.x -= widthDiff / 2;
+              pet.position.y -= heightDiff / 2;
+              
+              // Clamp to viewport bounds with new size
+              const maxX = this.viewport.width - message.state.currentSize.width;
+              const maxY = this.viewport.height - message.state.currentSize.height;
+              pet.position.x = Math.max(0, Math.min(maxX, pet.position.x));
+              pet.position.y = Math.max(0, Math.min(maxY, pet.position.y));
+              
+              logger.log(LOG.PREFIXES.BACKGROUND, 'Adjusted position for size change:', 
+                         pet.species, widthDiff, heightDiff);
+            }
+          }
         }
         break;
 
