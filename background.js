@@ -25,7 +25,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
     // Settings (hardcoded - no user controls)
     this.settings = {
       petSize: DISPLAY.DEFAULT_PET_SIZE,
-      speedMultiplier: 0.10, // Hardcoded to 0.10x for slower pets
+      speedMultiplier: 0.025, // Hardcoded to 0.10x for slower pets
       gravityEnabled: true, // Always enabled
       randomEvents: true // Always enabled
     };
