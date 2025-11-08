@@ -159,6 +159,58 @@ class PetManager {
       return distance <= radius;
     });
   }
+
+  /**
+   * Get pets overlapping with a rectangular area (for SleepingPlace collision detection)
+   * @param {Object} position - Top-left position {x, y}
+   * @param {number} size - Size of the area (assumes square)
+   * @param {Function} filter - Optional filter function
+   * @returns {Array} Overlapping pets sorted by overlap area (largest first)
+   */
+  getPetsOverlapping(position, size, filter = null) {
+    const { DISPLAY } = window.PettyConfig;
+    const petSize = DISPLAY.DEFAULT_PET_SIZE;
+    
+    const overlapping = this.pets
+      .map(pet => {
+        // Check if pet overlaps with the area
+        const petRight = pet.position.x + petSize;
+        const petBottom = pet.position.y + petSize;
+        const areaRight = position.x + size;
+        const areaBottom = position.y + size;
+        
+        // Check for overlap
+        if (pet.position.x < areaRight &&
+            petRight > position.x &&
+            pet.position.y < areaBottom &&
+            petBottom > position.y) {
+          
+          // Calculate overlap area
+          const overlapLeft = Math.max(pet.position.x, position.x);
+          const overlapTop = Math.max(pet.position.y, position.y);
+          const overlapRight = Math.min(petRight, areaRight);
+          const overlapBottom = Math.min(petBottom, areaBottom);
+          const overlapWidth = overlapRight - overlapLeft;
+          const overlapHeight = overlapBottom - overlapTop;
+          const overlapArea = overlapWidth * overlapHeight;
+          
+          return { pet, overlapArea };
+        }
+        return null;
+      })
+      .filter(result => result !== null);
+    
+    // Apply optional filter
+    let filtered = overlapping;
+    if (filter) {
+      filtered = overlapping.filter(result => filter(result.pet));
+    }
+    
+    // Sort by overlap area (largest first) and return only pets
+    return filtered
+      .sort((a, b) => b.overlapArea - a.overlapArea)
+      .map(result => result.pet);
+  }
   
   startUpdateLoop() {
     const update = (timestamp) => {

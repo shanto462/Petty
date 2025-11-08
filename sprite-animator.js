@@ -17,6 +17,7 @@ class SpriteAnimator {
     this.lastReturnedFrame = null; // Track last frame to avoid redundant updates
     this.decodedImages = {}; // Cache decoded images for instant rendering
     this.DEBUG = false; // Disable debug logging for performance
+    this.forcedLoops = null; // For SleepingPlace capability to force specific loop count
   }
   
   async loadAnimation(animationId) {
@@ -102,6 +103,7 @@ class SpriteAnimator {
     this.lastFrameTime = 0; // Reset timing
     this.frameCount = frames.length;
     this.lastReturnedFrame = null; // Reset frame tracking
+    this.forcedLoops = null; // Clear any forced loops
 
     return frames;
   }
@@ -129,9 +131,11 @@ class SpriteAnimator {
         this.currentFrame = 0;
         this.loops++;
 
-        // Check if animation has required loops
+        // Check if animation has required loops (with forcedLoops taking precedence)
         const animData = this.speciesData.animations?.find(a => a.id === this.currentAnimation);
-        const requiredLoops = animData?.requiredLoops;
+        
+        // ForcedLoops takes precedence (used by SleepingPlace capability)
+        const requiredLoops = this.forcedLoops !== null ? this.forcedLoops : animData?.requiredLoops;
 
         // Determine completion based on animation type:
         // - Movement/drag animations (no requiredLoops): loop infinitely
@@ -143,7 +147,7 @@ class SpriteAnimator {
 
         let shouldComplete = false;
         if (requiredLoops !== undefined) {
-          // Has explicit requiredLoops - use it
+          // Has explicit requiredLoops (or forcedLoops) - use it
           shouldComplete = this.loops >= requiredLoops;
         } else if (!isMovementOrDrag) {
           // Action animation without requiredLoops - default to 4 loops (like macOS angry animation)
@@ -152,6 +156,11 @@ class SpriteAnimator {
         // else: movement/drag animations loop infinitely
 
         if (shouldComplete) {
+          if (this.DEBUG) {
+            console.log('[SpriteAnimator]', this.speciesId, this.currentAnimation,
+                        'completed after', this.loops, '/', requiredLoops || 4, 'loops');
+          }
+          this.forcedLoops = null; // Clear forced loops
           return { status: 'completed', loops: this.loops };
         }
       }
@@ -176,6 +185,14 @@ class SpriteAnimator {
   
   getAnimationData(animationId) {
     return this.speciesData.animations?.find(a => a.id === animationId);
+  }
+
+  /**
+   * Set a specific number of loops for the current animation (used by SleepingPlace)
+   */
+  setSleepLoops(loops) {
+    this.forcedLoops = loops;
+    console.log('[SpriteAnimator]', this.speciesId, 'sleep loops set to', loops);
   }
 }
 

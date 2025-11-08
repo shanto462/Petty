@@ -43,6 +43,8 @@
     this.angryTimer = null; // Track angry cooldown timer for cleanup
     this.lastPoopTime = 0; // For LeavesPoopStains capability
     this.lastPositionUpdate = 0; // Throttle position updates to reduce messaging overhead
+    this.isSleeping = false; // For SleepingPlace interaction
+    this.sleepingPlaceEnabled = true; // Cooldown for SleepingPlace capability
 
     // Track last rendered position to avoid unnecessary DOM updates
     this.lastRenderedX = null;
@@ -69,9 +71,19 @@
     this.element.dataset.petId = this.id;
     this.element.dataset.species = this.speciesId;
 
+    // SleepingPlace capability: Make element 2x larger
+    if (this.hasCapability(CAPABILITIES.SLEEPING_PLACE)) {
+      this.element.style.width = `${DISPLAY.DEFAULT_PET_SIZE * 2}px`;
+      this.element.style.height = `${DISPLAY.DEFAULT_PET_SIZE * 2}px`;
+    }
+
     this.img = document.createElement('img');
-    this.img.style.width = `${DISPLAY.DEFAULT_PET_SIZE}px`;
-    this.img.style.height = `${DISPLAY.DEFAULT_PET_SIZE}px`;
+    // SleepingPlace entities are 2x size
+    const imageSize = this.hasCapability(CAPABILITIES.SLEEPING_PLACE) 
+      ? DISPLAY.DEFAULT_PET_SIZE * 2 
+      : DISPLAY.DEFAULT_PET_SIZE;
+    this.img.style.width = `${imageSize}px`;
+    this.img.style.height = `${imageSize}px`;
 
     // Show placeholder while loading (prevents blank pet during sprite load)
     this.img.style.background = 'transparent';
@@ -144,12 +156,13 @@
     }
 
     // Notify background of animation change (for movement control)
+    // Pets are moving if they're in movement animation AND not sleeping
     ChromeMessaging.sendMessage({
       type: MESSAGE_TYPES.UPDATE_PET_STATE,
       petId: this.id,
       state: {
         currentAnimation: animationId,
-        isMoving: (animationId === this.movementPath)
+        isMoving: (animationId === this.movementPath && !this.isSleeping)
       }
     }).catch(() => {}); // Ignore errors for fire-and-forget messages
   }
@@ -203,6 +216,14 @@
 
     // If animation completed, return to movement and schedule next animation
     if (result && result.status === 'completed') {
+      console.log(LOG.PREFIXES.PET, this.speciesId, 'animation completed after', result.loops, 'loops');
+
+      // Wake up if sleeping
+      if (this.isSleeping) {
+        console.log(LOG.PREFIXES.PET, this.speciesId, 'waking up from sleep');
+        this.isSleeping = false;
+      }
+
       if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0 && !this.isDragging) {
         this.setAnimation(this.movementPath);
       }
@@ -225,6 +246,11 @@
     // Check for interactions (only when in moving state)
     if (this.hasCapability(CAPABILITIES.GETS_ANGRY) && this.currentAnimation === this.movementPath) {
       this.checkAngryInteraction();
+    }
+
+    // SleepingPlace capability - check for pets to put to sleep
+    if (this.hasCapability(CAPABILITIES.SLEEPING_PLACE) && this.sleepingPlaceEnabled && this.currentAnimation === this.movementPath) {
+      this.checkSleepingPlaceInteraction();
     }
 
     // LeavesPoopStains capability - drop poop every 30-60 seconds
@@ -287,6 +313,95 @@
         this.angryTimer = null;
       }, ANIMATION.ANGRY_COOLDOWN);
     }
+  }
+
+  /**
+   * SleepingPlace capability: Check for overlapping pets that can sleep
+   */
+  checkSleepingPlaceInteraction() {
+    if (!this.sleepingPlaceEnabled) return;
+
+    // Get the size of the sleeping place (2x normal size)
+    const sleepingPlaceSize = DISPLAY.DEFAULT_PET_SIZE * 2;
+    
+    // Find overlapping pets that can sleep
+    const overlappingPets = this.petManager.getPetsOverlapping(
+      this.position, 
+      sleepingPlaceSize,
+      (pet) => pet.id !== this.id && !pet.isSleeping && pet.canSleep()
+    );
+
+    // Sort by overlap area (largest first) and take the first one
+    if (overlappingPets.length > 0) {
+      const petToSleep = overlappingPets[0];
+      this.putPetToSleep(petToSleep);
+      
+      // Disable sleeping place for 120 seconds (cooldown)
+      this.sleepingPlaceEnabled = false;
+      setTimeout(() => {
+        this.sleepingPlaceEnabled = true;
+      }, 120000);
+    }
+  }
+
+  /**
+   * SleepingPlace capability: Put a pet to sleep
+   */
+  putPetToSleep(pet) {
+    const sleepAnimation = pet.getSleepAnimation();
+    if (!sleepAnimation) return;
+
+    const sleepingPlaceSize = DISPLAY.DEFAULT_PET_SIZE * 2;
+    
+    // Position pet on top of sleeping place (centered horizontally, on top vertically)
+    pet.position.x = this.position.x + (sleepingPlaceSize - DISPLAY.DEFAULT_PET_SIZE) / 2;
+    pet.position.y = this.position.y + sleepingPlaceSize - DISPLAY.DEFAULT_PET_SIZE;
+    pet.velocity = { x: 0, y: 0 };
+    pet.isSleeping = true;
+
+    // Get required loops (from animation data or random 25-75)
+    const loops = sleepAnimation.requiredLoops || (25 + Math.floor(Math.random() * 51)); // 25-75
+    
+    console.log(LOG.PREFIXES.PET, pet.speciesId, 'going to sleep on', this.speciesId, 'for', loops, 'loops');
+    
+    // Set sleep animation
+    pet.setAnimation(sleepAnimation.id);
+    
+    // Force the animator to use specific loop count
+    pet.animator.setSleepLoops(loops);
+
+    // Notify background that pet is sleeping (no longer moving)
+    ChromeMessaging.sendMessage({
+      type: MESSAGE_TYPES.UPDATE_PET_STATE,
+      petId: pet.id,
+      state: {
+        currentAnimation: sleepAnimation.id,
+        isMoving: false
+      }
+    }).catch(() => {});
+
+    // Also sync position to background
+    ChromeMessaging.sendMessage({
+      type: MESSAGE_TYPES.UPDATE_PET_POSITION,
+      petId: pet.id,
+      position: pet.position,
+      isDragging: false
+    }).catch(() => {});
+  }
+
+  /**
+   * Check if this pet can sleep (has a sleep animation)
+   */
+  canSleep() {
+    return this.getSleepAnimation() !== null;
+  }
+
+  /**
+   * Get the sleep animation for this pet
+   */
+  getSleepAnimation() {
+    const animations = this.speciesData.animations || [];
+    return animations.find(a => a.id === 'sleep') || null;
   }
   
   updatePosition() {
