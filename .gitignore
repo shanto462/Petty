@@ -4,6 +4,14 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Node.js
+node_modules/
+package-lock.json
+
+# Build artifacts
+build/
+petty-extension*.zip
+
 # OS files
 .DS_Store
 Thumbs.db
