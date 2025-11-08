@@ -14,6 +14,7 @@ class SpriteAnimator {
     this.lastFrameTime = 0;
     this.loops = 0;
     this.frames = {}; // Cache: {animationId: [urls]}
+    this.lastReturnedFrame = null; // Track last frame to avoid redundant updates
   }
   
   async loadAnimation(animationId) {
@@ -23,33 +24,44 @@ class SpriteAnimator {
 
     console.log('[SpriteAnimator] 🔄 Loading animation:', this.speciesId, animationId);
 
-    // Use Image preloading instead of HEAD requests for faster loading
-    // Try loading frames in parallel up to a reasonable limit
+    // Load frames in smaller chunks to avoid overwhelming the browser
     const maxFrames = 100;
-    const loadPromises = [];
-
-    for (let index = 0; index < maxFrames; index++) {
-      const path = `Resources/PetsAssets/${this.speciesId}_${animationId}-${index}.png`;
-      const url = chrome.runtime.getURL(path);
-
-      loadPromises.push(
-        new Promise((resolve) => {
-          const img = new Image();
-          img.onload = () => resolve({ index, url, success: true });
-          img.onerror = () => resolve({ index, url, success: false });
-          img.src = url;
-        })
-      );
-    }
-
-    // Wait for all parallel loads to complete
-    const results = await Promise.all(loadPromises);
-
-    // Collect only successful consecutive frames (stop at first missing frame)
+    const chunkSize = 20; // Load 20 frames at a time
     const frames = [];
-    for (const result of results) {
-      if (!result.success) break; // Stop at first missing frame
-      frames.push(result.url);
+
+    for (let chunkStart = 0; chunkStart < maxFrames; chunkStart += chunkSize) {
+      const chunkEnd = Math.min(chunkStart + chunkSize, maxFrames);
+      const chunkPromises = [];
+
+      for (let index = chunkStart; index < chunkEnd; index++) {
+        const path = `Resources/PetsAssets/${this.speciesId}_${animationId}-${index}.png`;
+        const url = chrome.runtime.getURL(path);
+
+        chunkPromises.push(
+          new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve({ index, url, success: true });
+            img.onerror = () => resolve({ index, url, success: false });
+            img.src = url;
+          })
+        );
+      }
+
+      // Wait for this chunk to complete
+      const results = await Promise.all(chunkPromises);
+
+      // Check results in order - stop at first missing frame
+      let foundMissing = false;
+      for (const result of results) {
+        if (!result.success) {
+          foundMissing = true;
+          break;
+        }
+        frames.push(result.url);
+      }
+
+      // If we found a missing frame, stop loading more chunks
+      if (foundMissing) break;
     }
 
     if (frames.length > 0) {
@@ -82,42 +94,58 @@ class SpriteAnimator {
     this.loops = 0;
     this.lastFrameTime = 0; // Reset timing
     this.frameCount = frames.length;
-    
-    console.log('[SpriteAnimator] ✅ Started animation:', this.speciesId, animationId, 
+    this.lastReturnedFrame = null; // Reset frame tracking
+
+    console.log('[SpriteAnimator] ✅ Started animation:', this.speciesId, animationId,
                 'frames:', this.frameCount, 'fps:', this.fps);
-    
+
     return frames;
   }
   
   update(timestamp) {
     if (!this.currentAnimation || this.frameCount === 0) return null;
-    
+
     // Initialize lastFrameTime on first update
     if (this.lastFrameTime === 0) {
       this.lastFrameTime = timestamp;
+      // Return first frame immediately
+      const firstFrame = this.getCurrentFrameUrl();
+      this.lastReturnedFrame = firstFrame;
+      return { status: 'playing', frame: firstFrame, frameChanged: true };
     }
-    
+
+    let frameChanged = false;
+
     if (timestamp - this.lastFrameTime >= this.frameDelay) {
       this.lastFrameTime = timestamp;
       this.currentFrame++;
-      
+      frameChanged = true;
+
       if (this.currentFrame >= this.frameCount) {
         this.currentFrame = 0;
         this.loops++;
-        
+
         // Check if animation has required loops
         const animData = this.speciesData.animations?.find(a => a.id === this.currentAnimation);
         if (animData && animData.requiredLoops) {
           if (this.loops >= animData.requiredLoops) {
-            console.log('[SpriteAnimator]', this.speciesId, this.currentAnimation, 
+            console.log('[SpriteAnimator]', this.speciesId, this.currentAnimation,
                         'completed after', this.loops, '/', animData.requiredLoops, 'loops');
             return { status: 'completed', loops: this.loops };
           }
         }
       }
     }
-    
-    return { status: 'playing', frame: this.getCurrentFrameUrl() };
+
+    // Only return frame URL if it changed
+    if (frameChanged) {
+      const currentFrameUrl = this.getCurrentFrameUrl();
+      this.lastReturnedFrame = currentFrameUrl;
+      return { status: 'playing', frame: currentFrameUrl, frameChanged: true };
+    }
+
+    // No change - don't return frame to avoid unnecessary DOM updates
+    return { status: 'playing', frameChanged: false };
   }
   
   getCurrentFrameUrl() {
