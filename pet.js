@@ -44,6 +44,10 @@
     this.lastPoopTime = 0; // For LeavesPoopStains capability
     this.lastPositionUpdate = 0; // Throttle position updates to reduce messaging overhead
 
+    // Track last rendered position to avoid unnecessary DOM updates
+    this.lastRenderedX = null;
+    this.lastRenderedY = null;
+
     // DOM & Animator
     this.element = null;
     this.img = null;
@@ -300,14 +304,23 @@
   }
   
   updatePosition() {
-    this.element.style.left = this.position.x + 'px';
-    this.element.style.top = this.position.y + 'px';
+    // Only update DOM if position changed by at least 0.5px (avoid sub-pixel thrashing)
+    const threshold = 0.5;
+    const xChanged = this.lastRenderedX === null || Math.abs(this.position.x - this.lastRenderedX) >= threshold;
+    const yChanged = this.lastRenderedY === null || Math.abs(this.position.y - this.lastRenderedY) >= threshold;
 
-    // Apply rotation if Rotating capability is enabled
-    if (this.hasCapability(CAPABILITIES.ROTATING) && this.rotation !== 0) {
-      const scale = this.element.scale || 1.0;
-      this.element.style.transform = `scale(${scale}) rotate(${this.rotation}deg)`;
-    }
+    if (!xChanged && !yChanged) return; // Skip update if position hasn't meaningfully changed
+
+    // Use CSS transform for better performance than left/top
+    const rotation = this.hasCapability(CAPABILITIES.ROTATING) && this.rotation !== 0 ? this.rotation : 0;
+    const scale = this.element.scale || 1.0;
+
+    // Single transform update (more efficient than multiple style changes)
+    this.element.style.transform = `translate(${this.position.x}px, ${this.position.y}px) scale(${scale}) rotate(${rotation}deg)`;
+
+    // Track last rendered position
+    this.lastRenderedX = this.position.x;
+    this.lastRenderedY = this.position.y;
   }
 
   /**
