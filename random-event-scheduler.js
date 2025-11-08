@@ -82,21 +82,13 @@
           return;
         }
 
-        // No events implemented yet
-        if (this.events.length === 0) {
-          console.log(LOG.PREFIXES.BACKGROUND, 'No events available yet (UFO/Cloud coming soon)');
-          return;
-        }
+        // Trigger UFO event (hardcoded for now, will add more events later)
+        console.log(LOG.PREFIXES.BACKGROUND, 'Triggering UFO Abduction event');
 
-        // Pick a random event
-        const event = this.events[Math.floor(Math.random() * this.events.length)];
-        console.log(LOG.PREFIXES.BACKGROUND, 'Triggering random event:', event.name);
-
-        try {
-          await event.trigger(this.coordinator);
-        } catch (error) {
-          console.error(LOG.PREFIXES.BACKGROUND, 'Failed to trigger event:', error);
-        }
+        // Broadcast to all tabs
+        this.coordinator.broadcastToAllTabs({
+          type: 'TRIGGER_UFO_ABDUCTION'
+        });
       }
 
       /**

@@ -20,6 +20,7 @@
         "sprite-animator.js",
         "ephemeral-entity.js",
         "pet.js",
+        "ufo-abduction-event.js",
         "pet-manager.js"
       ],
       "css": ["pet.css"],

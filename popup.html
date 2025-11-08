@@ -474,6 +474,39 @@
     .toggle-switch input:checked + .toggle-slider:hover {
       background-color: #5CBF60;
     }
+
+    .tag-filters {
+      padding: 15px 20px;
+      background: rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-filter-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+      font-weight: 500;
+    }
+
+    .tag-filter-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .tag-filter-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
   </style>
 </head>
 <body>
@@ -546,7 +579,11 @@
   <div class="search-bar">
     <input type="text" class="search-input" id="search" placeholder="🔍 Search pets..." />
   </div>
-  
+
+  <div class="tag-filters" id="tag-filters">
+    <!-- Tag filter buttons will be inserted here dynamically -->
+  </div>
+
   <div class="species-count">
     Showing <strong id="shown-count">0</strong> / <strong id="species-count">0</strong> species
   </div>

@@ -60,24 +60,31 @@ class PetManager {
       case 'PET_ADDED':
         this.createPetFromData(message.pet);
         break;
-        
+
       case 'PET_REMOVED':
         this.removePetLocal(message.petId);
         break;
-        
+
       case 'ALL_PETS_REMOVED':
         this.removeAllPetsLocal();
         break;
-        
+
       case 'SYNC_ALL_PETS':
         this.syncPets(message.pets);
         break;
-        
+
       case 'PET_POSITION_UPDATE':
         const pet = this.pets.find(p => p.id === message.petId);
         if (pet && !pet.isDragging) {
           pet.position = message.position;
           pet.updatePosition();
+        }
+        break;
+
+      case 'TRIGGER_UFO_ABDUCTION':
+        console.log('[PetManager] UFO Abduction event triggered by background!');
+        if (typeof UfoAbductionEvent !== 'undefined') {
+          UfoAbductionEvent.trigger(this);
         }
         break;
     }

@@ -35,11 +35,13 @@
     this.isDragging = false;
     this.isGrounded = false;
     this.currentAnimation = null;
+    this.rotation = 0; // For Rotating capability
 
     // Capabilities state
     this.isAngry = false;
     this.animationTimer = null;
     this.angryTimer = null; // Track angry cooldown timer for cleanup
+    this.lastPoopTime = 0; // For LeavesPoopStains capability
 
     // DOM & Animator
     this.element = null;
@@ -203,9 +205,42 @@
     if (this.hasCapability(CAPABILITIES.GETS_ANGRY) && this.currentAnimation === this.movementPath) {
       this.checkAngryInteraction();
     }
-    
+
+    // LeavesPoopStains capability - drop poop every 30-60 seconds
+    if (this.hasCapability(CAPABILITIES.LEAVES_POOP_STAINS)) {
+      const now = Date.now();
+      const poopInterval = 30000 + Math.random() * 30000; // 30-60 seconds
+
+      if (now - this.lastPoopTime > poopInterval) {
+        this.leavePoopStain();
+        this.lastPoopTime = now;
+      }
+    }
+
     // Position is controlled by background worker, just render
     this.updatePosition();
+  }
+
+  /**
+   * LeavesPoopStains capability: Leave a poop stain at current position
+   */
+  leavePoopStain() {
+    if (!this.petManager) return;
+
+    const poop = new EphemeralEntity('poop', {
+      position: { x: this.position.x + 20, y: this.position.y + 40 },
+      velocity: { x: 0, y: 0 },
+      size: 30,
+      zIndex: -1, // Below pets
+      imagePath: null, // We'll use text emoji instead
+      lifetime: 60000, // 60 seconds
+      autoRemove: true
+    });
+
+    // Use text emoji instead of image
+    poop.element.innerHTML = '<div style="font-size: 24px; user-select: none;">💩</div>';
+
+    this.petManager.addEphemeralEntity(poop);
   }
   
   checkAngryInteraction() {
@@ -236,6 +271,20 @@
   updatePosition() {
     this.element.style.left = this.position.x + 'px';
     this.element.style.top = this.position.y + 'px';
+
+    // Apply rotation if Rotating capability is enabled
+    if (this.hasCapability(CAPABILITIES.ROTATING) && this.rotation !== 0) {
+      const scale = this.element.scale || 1.0;
+      this.element.style.transform = `scale(${scale}) rotate(${this.rotation}deg)`;
+    }
+  }
+
+  /**
+   * Rotating capability: Set rotation angle
+   * @param {number} degrees - Rotation in degrees
+   */
+  setRotation(degrees) {
+    this.rotation = degrees;
   }
 
   /**

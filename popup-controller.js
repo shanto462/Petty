@@ -27,6 +27,7 @@
       this.updateUI();
       this.setupRemoveAll();
       this.setupSearch();
+      this.setupTagFilters();
       this.setupSettings();
       this.updateSpeciesCount();
 
@@ -312,6 +313,85 @@
       const query = e.target.value.toLowerCase().trim();
       this.filterSpecies(query);
     });
+  }
+
+  setupTagFilters() {
+    const container = document.getElementById('tag-filters');
+
+    // Get all unique tags from species
+    const allTags = new Set();
+    Object.values(this.speciesManager.species).forEach(species => {
+      if (species.tags && Array.isArray(species.tags)) {
+        species.tags.forEach(tag => allTags.add(tag));
+      }
+    });
+
+    const tags = ['all', ...Array.from(allTags).sort()];
+
+    // Create filter buttons
+    tags.forEach(tag => {
+      const btn = document.createElement('button');
+      btn.className = 'tag-filter-btn';
+      if (tag === 'all') {
+        btn.classList.add('active');
+      }
+
+      const emoji = TAG_EMOJI[tag] || '📦';
+      btn.textContent = `${emoji} ${tag.charAt(0).toUpperCase() + tag.slice(1)}`;
+      btn.dataset.tag = tag;
+
+      btn.onclick = () => {
+        // Update active state
+        document.querySelectorAll('.tag-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Filter by tag
+        this.filterByTag(tag === 'all' ? null : tag);
+      };
+
+      container.appendChild(btn);
+    });
+
+    console.log(LOG.PREFIXES.POPUP, 'Created tag filters for:', tags);
+  }
+
+  filterByTag(tag) {
+    const categories = document.querySelectorAll('.category');
+    let visibleCount = 0;
+
+    if (!tag) {
+      // Show all
+      categories.forEach(cat => {
+        cat.style.display = 'block';
+        cat.querySelectorAll('.pet-item').forEach(item => {
+          item.style.display = 'block';
+          visibleCount++;
+        });
+      });
+    } else {
+      // Filter by tag
+      categories.forEach(category => {
+        const items = category.querySelectorAll('.pet-item');
+        let categoryHasVisible = false;
+
+        items.forEach(item => {
+          const speciesId = item.dataset.species;
+          const species = this.speciesManager.getSpecies(speciesId);
+
+          if (species && species.tags && species.tags.includes(tag)) {
+            item.style.display = 'block';
+            categoryHasVisible = true;
+            visibleCount++;
+          } else {
+            item.style.display = 'none';
+          }
+        });
+
+        category.style.display = categoryHasVisible ? 'block' : 'none';
+      });
+    }
+
+    document.getElementById('shown-count').textContent = visibleCount;
   }
   
   filterSpecies(query) {

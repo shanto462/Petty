@@ -186,6 +186,45 @@
         const dy = this.position.y - other.position.y;
         return Math.sqrt(dx * dx + dy * dy);
       }
+
+      /**
+       * Seeker capability: Follow a target entity
+       * @param {Object} target - Target entity (pet or ephemeral)
+       * @param {Object} options - { offset: {x, y}, speed, arrivalDistance, onArrival }
+       */
+      seekTarget(target, options = {}) {
+        if (!target || !target.position) return false;
+
+        const offset = options.offset || { x: 0, y: -50 }; // Default: above target
+        const speed = options.speed || 2.0;
+        const arrivalDistance = options.arrivalDistance || 20;
+
+        // Calculate target position with offset
+        const targetX = target.position.x + offset.x;
+        const targetY = target.position.y + offset.y;
+
+        // Calculate direction to target
+        const dx = targetX - this.position.x;
+        const dy = targetY - this.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Check if arrived
+        if (distance < arrivalDistance) {
+          if (options.onArrival) {
+            options.onArrival(this, target);
+          }
+          return true; // Arrived
+        }
+
+        // Move towards target
+        const dirX = dx / distance;
+        const dirY = dy / distance;
+
+        this.velocity.x = dirX * speed;
+        this.velocity.y = dirY * speed;
+
+        return false; // Still seeking
+      }
     }
 
     // Export

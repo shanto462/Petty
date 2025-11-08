@@ -244,13 +244,22 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
 
         const maxX = this.viewport.width - this.settings.petSize;
         const maxY = this.viewport.height - this.settings.petSize;
-        
+
         // Check if pet should be stationary (sleeping, eating, etc.)
         const isStationary = !pet.isMoving;
-        
-        // Apply gravity (always, unless stationary and on ground)
-        if (pet.position.y < maxY) {
+
+        // Check if pet is a wall crawler (disables gravity, sticks to bottom)
+        const isWallCrawler = species.capabilities?.includes('WallCrawler');
+
+        // Apply gravity (always, unless wall crawler)
+        if (!isWallCrawler && pet.position.y < maxY) {
           pet.velocity.y += gravity;
+        }
+
+        // Wall crawlers stick to bottom edge
+        if (isWallCrawler) {
+          pet.position.y = maxY;
+          pet.velocity.y = 0;
         }
         
         // Apply movement
