@@ -200,13 +200,15 @@
   
   update(timestamp) {
     if (!this.element) return;
-    
+
     // Update sprite animation ONLY
     const result = this.animator.update(timestamp);
-    if (result && result.frame) {
+
+    // Only update img.src when frame actually changes (huge performance improvement)
+    if (result && result.frameChanged && result.frame) {
       this.img.src = result.frame;
     }
-    
+
     // If animation completed, return to movement and schedule next animation
     if (result && result.status === 'completed') {
       console.log(LOG.PREFIXES.PET, this.speciesId, 'animation completed after', result.loops, 'loops');
