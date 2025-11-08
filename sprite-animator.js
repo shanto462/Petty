@@ -2,6 +2,7 @@
 
 class SpriteAnimator {
   constructor(speciesId, speciesData) {
+    this.logger = window.PettyLogger;
     this.speciesId = speciesId;
     this.speciesData = speciesData;
     // Allow FPS range 0.1-60 to support slow-motion species (e.g., Snail=1fps, cat_house=0.5fps)
@@ -79,7 +80,7 @@ class SpriteAnimator {
       this.frames[animationId] = frames;
       this.decodedImages[animationId] = decodedCache;
     } else if (this.DEBUG) {
-      console.error('[SpriteAnimator] ❌', this.speciesId, animationId, '→ NO FRAMES');
+      this.logger.error('[SpriteAnimator] ❌', this.speciesId, animationId, '→ NO FRAMES');
     }
 
     return frames;
@@ -92,7 +93,7 @@ class SpriteAnimator {
     const frames = await this.loadAnimation(animationId);
 
     if (!frames || frames.length === 0) {
-      if (this.DEBUG) console.error('[SpriteAnimator] ❌ Cannot set animation', animationId);
+      if (this.DEBUG) this.logger.error('[SpriteAnimator] ❌ Cannot set animation', animationId);
       return null;
     }
 
@@ -157,7 +158,7 @@ class SpriteAnimator {
 
         if (shouldComplete) {
           if (this.DEBUG) {
-            console.log('[SpriteAnimator]', this.speciesId, this.currentAnimation,
+            this.logger.log('[SpriteAnimator]', this.speciesId, this.currentAnimation,
                         'completed after', this.loops, '/', requiredLoops || 4, 'loops');
           }
           this.forcedLoops = null; // Clear forced loops
@@ -192,7 +193,7 @@ class SpriteAnimator {
    */
   setSleepLoops(loops) {
     this.forcedLoops = loops;
-    console.log('[SpriteAnimator]', this.speciesId, 'sleep loops set to', loops);
+    this.logger.log('[SpriteAnimator]', this.speciesId, 'sleep loops set to', loops);
   }
 }
 

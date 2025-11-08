@@ -5,6 +5,7 @@
   // Only define if not already defined
   if (!window.EphemeralEntity) {
     const { DISPLAY, LOG } = window.PettyConfig;
+    const logger = window.PettyLogger;
 
     /**
      * Base class for ephemeral (temporary) entities
@@ -64,7 +65,7 @@
         document.body.appendChild(this.element);
         this.updateTransform();
 
-        console.log(LOG.PREFIXES.PET, `EphemeralEntity [${this.type}] created:`, this.id);
+        logger.log(LOG.PREFIXES.PET, `EphemeralEntity [${this.type}] created:`, this.id);
       }
 
       update(timestamp) {
@@ -175,7 +176,7 @@
           this.element = null;
         }
 
-        console.log(LOG.PREFIXES.PET, `EphemeralEntity [${this.type}] removed:`, this.id);
+        logger.log(LOG.PREFIXES.PET, `EphemeralEntity [${this.type}] removed:`, this.id);
       }
 
       /**

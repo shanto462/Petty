@@ -1,10 +1,11 @@
 // Pet - Individual pet instance with capability-based behavior
 
 (function() {
-  // Only define if not already defined
+    // Only define if not already defined
   if (!window.Pet) {
     // Access configuration
-    const { DISPLAY, ANIMATION, LOG, MESSAGE_TYPES, DEFAULT_ANIMATIONS, CAPABILITIES } = window.PettyConfig;
+    const { DISPLAY, ANIMATION, LOG, MESSAGE_TYPES, DEFAULT_ANIMATIONS, CAPABILITIES, DEBUG } = window.PettyConfig;
+    const logger = window.PettyLogger;
 
     class Pet {
   constructor(speciesId, speciesData, petManager) {
@@ -24,9 +25,16 @@
     // State - Initial positioning matches macOS behavior
     // X: 20-80% of viewport width
     // Y: 10-50% of viewport height (WallCrawler spawns at bottom)
+    // SleepingPlace entities are 2x size, so adjust positioning
+    const entitySize = this.hasCapability(CAPABILITIES.SLEEPING_PLACE) 
+      ? DISPLAY.DEFAULT_PET_SIZE * 2 
+      : DISPLAY.DEFAULT_PET_SIZE;
+    
     const randomX = window.innerWidth * (0.2 + Math.random() * 0.6); // 20-80%
     const randomY = this.hasCapability(CAPABILITIES.WALL_CRAWLER)
-      ? window.innerHeight - DISPLAY.DEFAULT_PET_SIZE  // Bottom for wall crawlers
+      ? window.innerHeight - entitySize  // Bottom for wall crawlers
+      : this.hasCapability(CAPABILITIES.SLEEPING_PLACE)
+      ? window.innerHeight - entitySize  // Bottom for sleeping places (stationary)
       : window.innerHeight * (0.1 + Math.random() * 0.4); // 10-50% for normal pets
 
     this.position = { x: randomX, y: randomY };
@@ -54,6 +62,7 @@
     this.element = null;
     this.img = null;
     this.animator = new SpriteAnimator(speciesId, speciesData);
+    this.debugBubble = null; // Debug bubble element
 
     // Event handlers (store references for proper cleanup)
     this.boundMouseDown = this.onMouseDown.bind(this);
@@ -155,6 +164,11 @@
       this.img.src = frames[0];
     }
 
+    // Show debug bubble
+    if (DEBUG.SHOW_ACTION_BUBBLES) {
+      this.showDebugBubble(animationId);
+    }
+
     // Notify background of animation change (for movement control)
     // Pets are moving if they're in movement animation AND not sleeping
     ChromeMessaging.sendMessage({
@@ -216,11 +230,11 @@
 
     // If animation completed, return to movement and schedule next animation
     if (result && result.status === 'completed') {
-      console.log(LOG.PREFIXES.PET, this.speciesId, 'animation completed after', result.loops, 'loops');
+      logger.log(LOG.PREFIXES.PET, this.speciesId, 'animation completed after', result.loops, 'loops');
 
       // Wake up if sleeping
       if (this.isSleeping) {
-        console.log(LOG.PREFIXES.PET, this.speciesId, 'waking up from sleep');
+        logger.log(LOG.PREFIXES.PET, this.speciesId, 'waking up from sleep');
         this.isSleeping = false;
       }
 
@@ -301,7 +315,7 @@
 
     if (nearbyCats.length > 0) {
       this.isAngry = true;
-      console.log(LOG.PREFIXES.PET, this.speciesId, 'getting angry at another cat!');
+      logger.log(LOG.PREFIXES.PET, this.speciesId, 'getting angry at another cat!');
       this.setAnimation(DEFAULT_ANIMATIONS.ANGRY);
 
       // Animation will complete naturally via animator.update() using requiredLoops
@@ -362,7 +376,7 @@
     // Get required loops (from animation data or random 25-75)
     const loops = sleepAnimation.requiredLoops || (25 + Math.floor(Math.random() * 51)); // 25-75
     
-    console.log(LOG.PREFIXES.PET, pet.speciesId, 'going to sleep on', this.speciesId, 'for', loops, 'loops');
+    logger.log(LOG.PREFIXES.PET, pet.speciesId, 'going to sleep on', this.speciesId, 'for', loops, 'loops');
     
     // Set sleep animation
     pet.setAnimation(sleepAnimation.id);
@@ -403,6 +417,71 @@
     const animations = this.speciesData.animations || [];
     return animations.find(a => a.id === 'sleep') || null;
   }
+
+  /**
+   * Show debug bubble above pet displaying current action
+   */
+  showDebugBubble(action) {
+    // Remove existing bubble if any
+    if (this.debugBubble) {
+      this.debugBubble.remove();
+    }
+
+    // Create bubble
+    this.debugBubble = document.createElement('div');
+    this.debugBubble.className = 'petty-debug-bubble';
+    this.debugBubble.textContent = action;
+    this.debugBubble.style.cssText = `
+      position: fixed;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: monospace;
+      pointer-events: none;
+      z-index: ${DISPLAY.BASE_Z_INDEX + 1000};
+      white-space: nowrap;
+      animation: petty-bubble-fade 0.3s ease-in-out;
+    `;
+
+    document.body.appendChild(this.debugBubble);
+
+    // Position bubble above pet
+    this.updateDebugBubblePosition();
+
+    // Auto-remove after duration
+    setTimeout(() => {
+      if (this.debugBubble) {
+        this.debugBubble.style.opacity = '0';
+        this.debugBubble.style.transition = 'opacity 0.3s';
+        setTimeout(() => {
+          if (this.debugBubble) {
+            this.debugBubble.remove();
+            this.debugBubble = null;
+          }
+        }, 300);
+      }
+    }, DEBUG.BUBBLE_DURATION);
+  }
+
+  /**
+   * Update debug bubble position to follow pet
+   */
+  updateDebugBubblePosition() {
+    if (!this.debugBubble || !this.element) return;
+
+    const entitySize = this.hasCapability(CAPABILITIES.SLEEPING_PLACE) 
+      ? DISPLAY.DEFAULT_PET_SIZE * 2 
+      : DISPLAY.DEFAULT_PET_SIZE;
+
+    const bubbleX = this.position.x + entitySize / 2;
+    const bubbleY = this.position.y - 10;
+
+    this.debugBubble.style.left = bubbleX + 'px';
+    this.debugBubble.style.top = bubbleY + 'px';
+    this.debugBubble.style.transform = 'translate(-50%, -100%)';
+  }
   
   updatePosition() {
     // Only update DOM if position changed by at least 0.5px (avoid sub-pixel thrashing)
@@ -422,6 +501,11 @@
     // Track last rendered position
     this.lastRenderedX = this.position.x;
     this.lastRenderedY = this.position.y;
+
+    // Update debug bubble position if exists
+    if (DEBUG.SHOW_ACTION_BUBBLES) {
+      this.updateDebugBubblePosition();
+    }
   }
 
   /**
@@ -493,8 +577,12 @@
     let newY = e.clientY - this.dragOffset.y;
 
     // Apply boundary constraints to prevent dragging outside viewport
-    const maxX = window.innerWidth - DISPLAY.DEFAULT_PET_SIZE;
-    const maxY = window.innerHeight - DISPLAY.DEFAULT_PET_SIZE;
+    // Account for entity size (2x for sleeping places)
+    const entitySize = this.hasCapability(CAPABILITIES.SLEEPING_PLACE) 
+      ? DISPLAY.DEFAULT_PET_SIZE * 2 
+      : DISPLAY.DEFAULT_PET_SIZE;
+    const maxX = window.innerWidth - entitySize;
+    const maxY = window.innerHeight - entitySize;
 
     this.position.x = Math.max(0, Math.min(maxX, newX));
     this.position.y = Math.max(0, Math.min(maxY, newY));
@@ -564,6 +652,12 @@
       this.angryTimer = null;
     }
 
+    // Remove debug bubble
+    if (this.debugBubble) {
+      this.debugBubble.remove();
+      this.debugBubble = null;
+    }
+
     // Remove event listeners using bound references
     if (this.element) {
       this.element.removeEventListener('mousedown', this.boundMouseDown);
@@ -581,7 +675,7 @@
     this.img = null;
     this.animator = null;
 
-      console.log(LOG.PREFIXES.PET, this.speciesId, 'destroyed');
+      logger.log(LOG.PREFIXES.PET, this.speciesId, 'destroyed');
     }
   }
 

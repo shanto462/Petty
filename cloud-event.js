@@ -6,6 +6,7 @@
 
   if (!globalScope.CloudEvent) {
     const { LOG, DISPLAY, MESSAGE_TYPES } = globalScope.PettyConfig || {};
+    const logger = globalScope.PettyLogger;
 
     /**
      * Fantozzi Rainy Cloud Event
@@ -21,7 +22,7 @@
        * @param {PetManager} petManager - Reference to pet manager
        */
       static async trigger(petManager) {
-        console.log(LOG.PREFIXES.PET, 'Cloud event triggered!');
+        logger.log(LOG.PREFIXES.PET, 'Cloud event triggered!');
 
         // Find eligible pets (non-ephemeral, has movement)
         const eligiblePets = petManager.pets.filter(pet => {
@@ -30,13 +31,13 @@
         });
 
         if (eligiblePets.length === 0) {
-          console.log(LOG.PREFIXES.PET, 'No eligible pets for cloud event');
+          logger.log(LOG.PREFIXES.PET, 'No eligible pets for cloud event');
           return;
         }
 
         // Select random pet
         const targetPet = eligiblePets[Math.floor(Math.random() * eligiblePets.length)];
-        console.log(LOG.PREFIXES.PET, 'Cloud following pet:', targetPet.speciesId);
+        logger.log(LOG.PREFIXES.PET, 'Cloud following pet:', targetPet.speciesId);
 
         // Create cloud entity (2x normal size)
         const cloudSize = DISPLAY.DEFAULT_PET_SIZE * 2; // 150px
@@ -53,7 +54,7 @@
         // Fallback to emoji if sprite doesn't load
         if (cloud.img) {
           cloud.img.onerror = () => {
-            console.log(LOG.PREFIXES.PET, 'Cloud sprite not found, using emoji fallback');
+            logger.log(LOG.PREFIXES.PET, 'Cloud sprite not found, using emoji fallback');
             cloud.element.innerHTML = '<div style="font-size: 120px; user-select: none;">☁️</div>';
           };
         }
@@ -64,20 +65,20 @@
         const duration = 60000 + Math.random() * 60000;
         const startTime = Date.now();
 
-        console.log(LOG.PREFIXES.PET, `Cloud will follow for ${Math.round(duration/1000)} seconds`);
+        logger.log(LOG.PREFIXES.PET, `Cloud will follow for ${Math.round(duration/1000)} seconds`);
 
         // Custom update function for cloud
         cloud.onUpdate = (entity, timestamp) => {
           // Check if duration expired
           if (Date.now() - startTime >= duration) {
-            console.log(LOG.PREFIXES.PET, 'Cloud duration expired, removing');
+            logger.log(LOG.PREFIXES.PET, 'Cloud duration expired, removing');
             entity.remove();
             return;
           }
 
           // Check if target pet still exists
           if (!petManager.pets.includes(targetPet)) {
-            console.log(LOG.PREFIXES.PET, 'Target pet removed, cloud despawning');
+            logger.log(LOG.PREFIXES.PET, 'Target pet removed, cloud despawning');
             entity.remove();
             return;
           }
@@ -101,7 +102,7 @@
         // Schedule removal after duration
         setTimeout(() => {
           if (cloud.isAlive) {
-            console.log(LOG.PREFIXES.PET, 'Cloud timeout reached, removing');
+            logger.log(LOG.PREFIXES.PET, 'Cloud timeout reached, removing');
             cloud.remove();
           }
         }, duration);

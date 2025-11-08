@@ -1,7 +1,7 @@
 // Background Service Worker - Coordinates pets across all tabs
 
 // Load dependencies
-importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-event-scheduler.js');
+importScripts('species-list.js', 'config.js', 'logger.js', 'species-validator.js', 'random-event-scheduler.js');
 
 (function() {
   // Only initialize if not already initialized
@@ -12,6 +12,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
     const { PHYSICS, DISPLAY, SPEED, LOG, STORAGE_KEYS, MESSAGE_TYPES } = self.PettyConfig;
     const SPECIES_LIST = self.SPECIES_LIST;
     const { validateSpeciesData } = self.SpeciesValidator || {};
+    const logger = self.PettyLogger;
 
     class PetCoordinator {
   constructor() {
@@ -37,7 +38,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
   }
   
   async init() {
-    console.log('[Background] Pet Coordinator initialized');
+    logger.log('[Background] Pet Coordinator initialized');
 
     // Load settings first
     await this.loadSettings();
@@ -49,7 +50,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
     chrome.storage.sync.get([STORAGE_KEYS.GLOBAL_PETS], (result) => {
       if (result[STORAGE_KEYS.GLOBAL_PETS]) {
         this.globalPets = result[STORAGE_KEYS.GLOBAL_PETS];
-        console.log(LOG.PREFIXES.BACKGROUND, 'Loaded', this.globalPets.length, 'global pets');
+        logger.log(LOG.PREFIXES.BACKGROUND, 'Loaded', this.globalPets.length, 'global pets');
       }
     });
 
@@ -71,13 +72,13 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
 
   async loadSettings() {
     // Settings are now hardcoded, no need to load from storage
-    console.log(LOG.PREFIXES.BACKGROUND, 'Using hardcoded settings:', this.settings);
+    logger.log(LOG.PREFIXES.BACKGROUND, 'Using hardcoded settings:', this.settings);
     return Promise.resolve();
   }
   
   async loadSpeciesData() {
     // Use auto-generated species list instead of hardcoded array
-    console.log(LOG.PREFIXES.BACKGROUND, 'Loading', SPECIES_LIST.length, 'species in parallel...');
+    logger.log(LOG.PREFIXES.BACKGROUND, 'Loading', SPECIES_LIST.length, 'species in parallel...');
 
     // Load all species in parallel using Promise.all() for better performance
     const loadPromises = SPECIES_LIST.map(async (id) => {
@@ -95,7 +96,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
           if (validateSpeciesData) {
             const validation = validateSpeciesData(data, id);
             if (!validation.valid) {
-              console.warn(LOG.PREFIXES.BACKGROUND, 'Validation errors for species:', id, validation.errors);
+              logger.warn(LOG.PREFIXES.BACKGROUND, 'Validation errors for species:', id, validation.errors);
               return { id, data: validation.data };
             }
             return { id, data: validation.data };
@@ -105,7 +106,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
         }
         return null;
       } catch (e) {
-        console.warn(LOG.PREFIXES.BACKGROUND, 'Failed to load species:', id, e);
+        logger.warn(LOG.PREFIXES.BACKGROUND, 'Failed to load species:', id, e);
         return null;
       }
     });
@@ -120,7 +121,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
       }
     });
 
-    console.log(LOG.PREFIXES.BACKGROUND, 'Loaded', Object.keys(this.speciesData).length, '/', SPECIES_LIST.length, 'species for physics');
+    logger.log(LOG.PREFIXES.BACKGROUND, 'Loaded', Object.keys(this.speciesData).length, '/', SPECIES_LIST.length, 'species for physics');
   }
   
   async handleMessage(message, sender, sendResponse) {
@@ -162,7 +163,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
           isMoving: species?.capabilities?.includes('LinearMovement') || false,
           currentAnimation: species?.movementPath || 'front'
         };
-        console.log('[Background] Adding pet:', message.species, {
+        logger.log('[Background] Adding pet:', message.species, {
           speed: species?.speed,
           fps: species?.fps,
           movementPath: species?.movementPath,
@@ -232,8 +233,11 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
         const bounce = PHYSICS.BOUNCE;
         const friction = PHYSICS.FRICTION;
 
-        const maxX = this.viewport.width - this.settings.petSize;
-        const maxY = this.viewport.height - this.settings.petSize;
+        // SleepingPlace entities are 2x size - account for this in boundary calculations
+        const isSleepingPlace = species.capabilities?.includes('SleepingPlace');
+        const entitySize = isSleepingPlace ? this.settings.petSize * 2 : this.settings.petSize;
+        const maxX = this.viewport.width - entitySize;
+        const maxY = this.viewport.height - entitySize;
 
         // Check if pet should be stationary (sleeping, eating, etc.)
         const isStationary = !pet.isMoving;
@@ -241,13 +245,13 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
         // Check if pet is a wall crawler (disables gravity, sticks to bottom)
         const isWallCrawler = species.capabilities?.includes('WallCrawler');
 
-        // Apply gravity (always, unless wall crawler)
-        if (!isWallCrawler && pet.position.y < maxY) {
+        // Apply gravity (always, unless wall crawler or sleeping place)
+        if (!isWallCrawler && !isSleepingPlace && pet.position.y < maxY) {
           pet.velocity.y += gravity;
         }
 
-        // Wall crawlers stick to bottom edge
-        if (isWallCrawler) {
+        // Wall crawlers and sleeping places stick to bottom edge
+        if (isWallCrawler || isSleepingPlace) {
           pet.position.y = maxY;
           pet.velocity.y = 0;
         }

@@ -7,6 +7,7 @@
 
   if (!globalScope.PettySettings) {
     const { DISPLAY, SPEED } = globalScope.PettyConfig || {};
+    const logger = globalScope.PettyLogger || { warn: console.warn, error: console.error };
 
     /**
      * Settings Manager (Optional Singleton)
@@ -30,7 +31,7 @@
        */
       async load() {
         if (typeof chrome === 'undefined' || !chrome.storage) {
-          console.warn('[PettySettings] Chrome storage not available, using defaults');
+          logger.warn('[PettySettings] Chrome storage not available, using defaults');
           return this.current;
         }
 
@@ -49,7 +50,7 @@
        */
       async save() {
         if (typeof chrome === 'undefined' || !chrome.storage) {
-          console.warn('[PettySettings] Chrome storage not available');
+          logger.warn('[PettySettings] Chrome storage not available');
           return;
         }
 
@@ -119,7 +120,7 @@
           try {
             callback(key, value);
           } catch (error) {
-            console.error('[PettySettings] Listener error:', error);
+            logger.error('[PettySettings] Listener error:', error);
           }
         });
       }

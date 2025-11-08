@@ -13,6 +13,7 @@
       "js": [
         "species-list.js",
         "config.js",
+        "logger.js",
         "settings.js",
         "species-validator.js",
         "chrome-messaging.js",

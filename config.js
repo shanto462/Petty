@@ -132,6 +132,16 @@
     };
 
     /**
+     * Debug Configuration
+     * Enable/disable debug features
+     */
+    const DEBUG = {
+      SHOW_ACTION_BUBBLES: true, // Show bubbles above pets displaying their current action
+      SHOW_CONSOLE_LOGS: false, // Show detailed console logs
+      BUBBLE_DURATION: 3000 // How long debug bubbles stay visible (ms)
+    };
+
+    /**
      * Chrome Storage Keys
      * Keys used for Chrome sync storage
      */
@@ -197,6 +207,7 @@
       SPECIES,
       TAG_EMOJI,
       LOG,
+      DEBUG,
       STORAGE_KEYS,
       MESSAGE_TYPES,
       DEFAULT_ANIMATIONS,

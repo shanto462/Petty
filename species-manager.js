@@ -7,6 +7,7 @@
     const { LOG, SPECIES } = window.PettyConfig;
     const SPECIES_LIST = window.SPECIES_LIST;
     const { validateSpeciesData } = window.SpeciesValidator || {};
+    const logger = window.PettyLogger;
 
     class SpeciesManager {
   // Singleton instance
@@ -41,17 +42,17 @@
   async loadAllSpecies() {
     // If already loaded, return cached data
     if (this.loaded) {
-      console.log(LOG.PREFIXES.SPECIES_MANAGER, 'Already loaded, returning cached data');
+      logger.log(LOG.PREFIXES.SPECIES_MANAGER, 'Already loaded, returning cached data');
       return this.species;
     }
 
     // If already loading, return the existing promise
     if (this.loading) {
-      console.log(LOG.PREFIXES.SPECIES_MANAGER, 'Loading in progress, waiting...');
+      logger.log(LOG.PREFIXES.SPECIES_MANAGER, 'Loading in progress, waiting...');
       return this.loading;
     }
 
-    console.log(LOG.PREFIXES.SPECIES_MANAGER, 'Loading', SPECIES_LIST.length, 'species in parallel...');
+    logger.log(LOG.PREFIXES.SPECIES_MANAGER, 'Loading', SPECIES_LIST.length, 'species in parallel...');
 
     // Create the loading promise
     this.loading = this.#performLoad();
@@ -85,7 +86,7 @@
           if (validateSpeciesData) {
             const validation = validateSpeciesData(data, id);
             if (!validation.valid) {
-              console.warn(LOG.PREFIXES.SPECIES_MANAGER, 'Validation errors for species:', id, validation.errors);
+              logger.warn(LOG.PREFIXES.SPECIES_MANAGER, 'Validation errors for species:', id, validation.errors);
               // Still return data even if validation fails (with defaults applied)
               return { id, data: validation.data };
             }
@@ -96,10 +97,10 @@
           return { id, data };
         }
 
-        console.warn(LOG.PREFIXES.SPECIES_MANAGER, 'Failed to fetch species:', id);
+        logger.warn(LOG.PREFIXES.SPECIES_MANAGER, 'Failed to fetch species:', id);
         return null;
       } catch (error) {
-        console.warn(LOG.PREFIXES.SPECIES_MANAGER, 'Failed to load:', id, error);
+        logger.warn(LOG.PREFIXES.SPECIES_MANAGER, 'Failed to load:', id, error);
         return null;
       }
     });
@@ -116,10 +117,10 @@
 
     this.loaded = true;
     const loadedCount = Object.keys(this.species).length;
-    console.log(LOG.PREFIXES.SPECIES_MANAGER, 'Loaded', loadedCount, '/', SPECIES_LIST.length, 'species');
+    logger.log(LOG.PREFIXES.SPECIES_MANAGER, 'Loaded', loadedCount, '/', SPECIES_LIST.length, 'species');
 
     if (loadedCount < SPECIES.EXPECTED_COUNT) {
-      console.warn(LOG.PREFIXES.SPECIES_MANAGER, 'Warning: Expected', SPECIES.EXPECTED_COUNT, 'species but loaded', loadedCount);
+      logger.warn(LOG.PREFIXES.SPECIES_MANAGER, 'Warning: Expected', SPECIES.EXPECTED_COUNT, 'species but loaded', loadedCount);
     }
   }
   

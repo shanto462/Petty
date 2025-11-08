@@ -6,6 +6,7 @@
 
   if (!globalScope.RandomEventScheduler) {
     const { LOG } = globalScope.PettyConfig || {};
+    const logger = globalScope.PettyLogger || { log: () => {}, warn: () => {}, error: () => {} };
 
     /**
      * Schedules random events (UFO abductions, clouds, etc.) at random intervals
@@ -34,7 +35,7 @@
       start() {
         if (this.isRunning) return;
         this.isRunning = true;
-        console.log(LOG.PREFIXES.BACKGROUND, 'RandomEventScheduler started');
+        logger.log(LOG.PREFIXES.BACKGROUND, 'RandomEventScheduler started');
         this.schedule();
       }
 
@@ -47,7 +48,7 @@
           clearTimeout(this.scheduledTimeout);
           this.scheduledTimeout = null;
         }
-        console.log(LOG.PREFIXES.BACKGROUND, 'RandomEventScheduler stopped');
+        logger.log(LOG.PREFIXES.BACKGROUND, 'RandomEventScheduler stopped');
       }
 
       /**
@@ -60,7 +61,7 @@
         const delay = Math.random() * this.MAX_EVENT_DELAY_MS;
         const delayMinutes = Math.round(delay / 60000);
 
-        console.log(LOG.PREFIXES.BACKGROUND,
+        logger.log(LOG.PREFIXES.BACKGROUND,
           `Next random event in ${delayMinutes} minutes (${Math.round(delay/1000)}s)`);
 
         this.scheduledTimeout = setTimeout(() => {
@@ -75,19 +76,19 @@
       async trigger() {
         // Check if random events are enabled
         if (!this.coordinator.settings.randomEvents) {
-          console.log(LOG.PREFIXES.BACKGROUND, 'Random events disabled, skipping');
+          logger.log(LOG.PREFIXES.BACKGROUND, 'Random events disabled, skipping');
           return;
         }
 
         // Check if there are any pets
         if (this.coordinator.globalPets.length === 0) {
-          console.log(LOG.PREFIXES.BACKGROUND, 'No pets active, skipping random event');
+          logger.log(LOG.PREFIXES.BACKGROUND, 'No pets active, skipping random event');
           return;
         }
 
         // Randomly select an event
         const randomEvent = this.events[Math.floor(Math.random() * this.events.length)];
-        console.log(LOG.PREFIXES.BACKGROUND, 'Triggering random event:', randomEvent.name);
+        logger.log(LOG.PREFIXES.BACKGROUND, 'Triggering random event:', randomEvent.name);
 
         // Broadcast to all tabs
         this.coordinator.broadcastToAllTabs({
@@ -102,7 +103,7 @@
        */
       registerEvent(name, triggerFn) {
         this.events.push({ name, trigger: triggerFn });
-        console.log(LOG.PREFIXES.BACKGROUND, 'Registered event:', name);
+        logger.log(LOG.PREFIXES.BACKGROUND, 'Registered event:', name);
       }
     }
 

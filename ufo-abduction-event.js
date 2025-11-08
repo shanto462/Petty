@@ -6,6 +6,7 @@
 
   if (!globalScope.UfoAbductionEvent) {
     const { LOG, DISPLAY, MESSAGE_TYPES } = globalScope.PettyConfig || {};
+    const logger = globalScope.PettyLogger;
 
     /**
      * UFO Abduction Event
@@ -21,7 +22,7 @@
        * @param {PetManager} petManager - Reference to pet manager
        */
       static async trigger(petManager) {
-        console.log(LOG.PREFIXES.PET, 'UFO Abduction event triggered!');
+        logger.log(LOG.PREFIXES.PET, 'UFO Abduction event triggered!');
 
         // Find eligible pets (non-ephemeral, has movement)
         const eligiblePets = petManager.pets.filter(pet => {
@@ -30,13 +31,13 @@
         });
 
         if (eligiblePets.length === 0) {
-          console.log(LOG.PREFIXES.PET, 'No eligible pets for UFO abduction');
+          logger.log(LOG.PREFIXES.PET, 'No eligible pets for UFO abduction');
           return;
         }
 
         // Select random pet
         const targetPet = eligiblePets[Math.floor(Math.random() * eligiblePets.length)];
-        console.log(LOG.PREFIXES.PET, 'UFO targeting pet:', targetPet.speciesId);
+        logger.log(LOG.PREFIXES.PET, 'UFO targeting pet:', targetPet.speciesId);
 
         // Create UFO entity
         const ufo = new EphemeralEntity('ufo', {
@@ -51,7 +52,7 @@
         // Fallback to emoji if sprite doesn't load
         if (ufo.img) {
           ufo.img.onerror = () => {
-            console.log(LOG.PREFIXES.PET, 'UFO sprite not found, using emoji fallback');
+            logger.log(LOG.PREFIXES.PET, 'UFO sprite not found, using emoji fallback');
             ufo.element.innerHTML = '<div style="font-size: 80px; user-select: none;">🛸</div>';
           };
         }
@@ -80,7 +81,7 @@
                 speed: 3.0,
                 arrivalDistance: 30,
                 onArrival: () => {
-                  console.log(LOG.PREFIXES.PET, 'UFO arrived at pet!');
+                  logger.log(LOG.PREFIXES.PET, 'UFO arrived at pet!');
                   state = 'abducting';
                   abductionStartTime = Date.now();
 
@@ -98,7 +99,7 @@
 
               // Check if abduction complete
               if (Date.now() - abductionStartTime >= ABDUCTION_DURATION) {
-                console.log(LOG.PREFIXES.PET, 'Abduction complete, removing pet');
+                logger.log(LOG.PREFIXES.PET, 'Abduction complete, removing pet');
 
                 // Remove pet
                 const petId = targetPet.id;
@@ -116,7 +117,7 @@
 
                 // Schedule respawn
                 setTimeout(async () => {
-                  console.log(LOG.PREFIXES.PET, 'Respawning abducted pet:', petData.species);
+                  logger.log(LOG.PREFIXES.PET, 'Respawning abducted pet:', petData.species);
 
                   // Request background to add new pet
                   try {
@@ -125,7 +126,7 @@
                       species: petData.species
                     });
                   } catch (error) {
-                    console.error(LOG.PREFIXES.PET, 'Failed to respawn pet:', error);
+                    logger.error(LOG.PREFIXES.PET, 'Failed to respawn pet:', error);
                   }
                 }, RESPAWN_DELAY);
               }
@@ -134,7 +135,7 @@
             case 'leaving':
               // Remove UFO when off-screen
               if (entity.isOutOfBounds()) {
-                console.log(LOG.PREFIXES.PET, 'UFO left screen, removing');
+                logger.log(LOG.PREFIXES.PET, 'UFO left screen, removing');
                 entity.remove();
               }
               break;
@@ -146,7 +147,7 @@
        * Start abduction animation on pet
        */
       static async startAbduction(pet, petManager) {
-        console.log(LOG.PREFIXES.PET, 'Starting abduction animation on', pet.speciesId);
+        logger.log(LOG.PREFIXES.PET, 'Starting abduction animation on', pet.speciesId);
 
         // Paralyze pet (stop normal physics)
         pet.isDragging = true; // Hack to prevent physics updates
@@ -157,7 +158,7 @@
         // Shrink pet from current size to 5x5 over 1.1 seconds
         await pet.scaleTo(0.1, 1100); // 0.1 = 10% of original size (~7.5px)
 
-        console.log(LOG.PREFIXES.PET, 'Abduction animation complete');
+        logger.log(LOG.PREFIXES.PET, 'Abduction animation complete');
       }
     }
 

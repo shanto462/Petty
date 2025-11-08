@@ -7,6 +7,7 @@
 
     // Access configuration
     const { LOG, MESSAGE_TYPES, SPECIES, TAG_EMOJI } = window.PettyConfig;
+    const logger = window.PettyLogger;
 
     class PopupController {
   constructor() {
@@ -16,7 +17,7 @@
   }
 
   async init() {
-    console.log(LOG.PREFIXES.POPUP, 'Initializing...');
+    logger.log(LOG.PREFIXES.POPUP, 'Initializing...');
 
     try {
       // Use singleton instance of SpeciesManager
@@ -31,15 +32,15 @@
       this.updateSpeciesCount();
 
       const loadedCount = Object.keys(this.speciesManager.species).length;
-      console.log(LOG.PREFIXES.POPUP, 'Ready! Loaded', loadedCount, '/', SPECIES.EXPECTED_COUNT, 'species');
-      console.log(LOG.PREFIXES.POPUP, 'Species:', Object.keys(this.speciesManager.species).sort().join(', '));
-      console.log(LOG.PREFIXES.POPUP, 'Active pets:', this.globalPets.length);
+      logger.log(LOG.PREFIXES.POPUP, 'Ready! Loaded', loadedCount, '/', SPECIES.EXPECTED_COUNT, 'species');
+      logger.log(LOG.PREFIXES.POPUP, 'Species:', Object.keys(this.speciesManager.species).sort().join(', '));
+      logger.log(LOG.PREFIXES.POPUP, 'Active pets:', this.globalPets.length);
 
       if (loadedCount < SPECIES.EXPECTED_COUNT) {
-        console.warn(LOG.PREFIXES.POPUP, 'Missing species! Expected', SPECIES.EXPECTED_COUNT, 'got', loadedCount);
+        logger.warn(LOG.PREFIXES.POPUP, 'Missing species! Expected', SPECIES.EXPECTED_COUNT, 'got', loadedCount);
       }
     } catch (error) {
-      console.error(LOG.PREFIXES.POPUP, 'Initialization error:', error);
+      logger.error(LOG.PREFIXES.POPUP, 'Initialization error:', error);
       this.showError('Failed to initialize. Please try again.');
     }
   }
@@ -51,7 +52,7 @@
         this.globalPets = response.pets;
       }
     } catch (error) {
-      console.error(LOG.PREFIXES.POPUP, 'Failed to load global pets:', error);
+      logger.error(LOG.PREFIXES.POPUP, 'Failed to load global pets:', error);
       throw error;
     }
   }
@@ -67,7 +68,7 @@
 
     let totalRendered = 0;
 
-    console.log(LOG.PREFIXES.POPUP, 'Discovered tags:', allTags);
+    logger.log(LOG.PREFIXES.POPUP, 'Discovered tags:', allTags);
 
     allTags.forEach(tag => {
       if (!byTags[tag] || byTags[tag].length === 0) {
@@ -89,7 +90,7 @@
       // Sort alphabetically within category
       const sortedSpecies = byTags[tag].sort((a, b) => a.id.localeCompare(b.id));
 
-      console.log(LOG.PREFIXES.POPUP, `Category ${tag}:`, sortedSpecies.map(s => s.id).join(', '));
+      logger.log(LOG.PREFIXES.POPUP, `Category ${tag}:`, sortedSpecies.map(s => s.id).join(', '));
 
       sortedSpecies.forEach(species => {
         const item = this.createSpeciesItem(species);
@@ -101,7 +102,7 @@
       container.appendChild(category);
     });
 
-    console.log(LOG.PREFIXES.POPUP, 'Rendered', totalRendered, 'species in', allTags.length, 'categories');
+    logger.log(LOG.PREFIXES.POPUP, 'Rendered', totalRendered, 'species in', allTags.length, 'categories');
   }
   
   createSpeciesItem(species) {
@@ -179,7 +180,7 @@
         this.updateUI();
       }
     } catch (error) {
-      console.error(LOG.PREFIXES.POPUP, 'Failed to add pet:', error);
+      logger.error(LOG.PREFIXES.POPUP, 'Failed to add pet:', error);
       this.showError('Failed to add pet. Please try again.');
     }
   }
@@ -198,7 +199,7 @@
         this.updateUI();
       }
     } catch (error) {
-      console.error(LOG.PREFIXES.POPUP, 'Failed to remove pet:', error);
+      logger.error(LOG.PREFIXES.POPUP, 'Failed to remove pet:', error);
       this.showError('Failed to remove pet. Please try again.');
     }
   }
@@ -299,7 +300,7 @@
             this.updateUI();
           }
         } catch (error) {
-          console.error(LOG.PREFIXES.POPUP, 'Failed to remove all pets:', error);
+          logger.error(LOG.PREFIXES.POPUP, 'Failed to remove all pets:', error);
           this.showError('Failed to remove all pets. Please try again.');
         }
       }
@@ -351,7 +352,7 @@
       container.appendChild(btn);
     });
 
-    console.log(LOG.PREFIXES.POPUP, 'Created tag filters for:', tags);
+    logger.log(LOG.PREFIXES.POPUP, 'Created tag filters for:', tags);
   }
 
   filterByTag(tag) {

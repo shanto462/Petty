@@ -1,5 +1,7 @@
 // Chrome Messaging Helper - Handles retries for suspended service workers
 
+const logger = (typeof window !== 'undefined' ? window.PettyLogger : self.PettyLogger) || { warn: console.warn, error: console.error };
+
 class ChromeMessaging {
   static async sendMessage(message, maxRetries = 3, delay = 100) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -21,13 +23,13 @@ class ChromeMessaging {
                                 error.message.includes('Extension context invalidated');
         
         if (isChannelClosed && !isLastAttempt) {
-          console.warn(`[ChromeMessaging] Retry ${attempt}/${maxRetries} - Service worker suspended, retrying...`);
+          logger.warn(`[ChromeMessaging] Retry ${attempt}/${maxRetries} - Service worker suspended, retrying...`);
           await this.sleep(delay * attempt); // Exponential backoff
           continue;
         }
         
         if (isLastAttempt) {
-          console.error('[ChromeMessaging] Failed after', maxRetries, 'attempts:', error.message);
+          logger.error('[ChromeMessaging] Failed after', maxRetries, 'attempts:', error.message);
         }
         
         throw error;

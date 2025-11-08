@@ -2,6 +2,7 @@
 
 class PetManager {
   constructor() {
+    this.logger = window.PettyLogger;
     this.speciesManager = new SpeciesManager();
     this.pets = [];
     this.ephemeralEntities = []; // UFOs, clouds, poop stains, etc.
@@ -10,7 +11,7 @@ class PetManager {
   }
   
   async init() {
-    console.log('[PetManager] Initializing...');
+    this.logger.log('[PetManager] Initializing...');
     
     // Load all species
     await this.speciesManager.loadAllSpecies();
@@ -31,10 +32,10 @@ class PetManager {
         // Start update loop
         this.startUpdateLoop();
         
-        console.log('[PetManager] ✅ Ready! Active pets:', this.pets.length);
+        this.logger.log('[PetManager] ✅ Ready! Active pets:', this.pets.length);
       })
       .catch((error) => {
-        console.error('[PetManager] Failed to get global pets:', error);
+        this.logger.error('[PetManager] Failed to get global pets:', error);
         // Still start update loop
         this.startUpdateLoop();
       });
@@ -82,14 +83,14 @@ class PetManager {
         break;
 
       case 'TRIGGER_UFO_ABDUCTION':
-        console.log('[PetManager] UFO Abduction event triggered by background!');
+        this.logger.log('[PetManager] UFO Abduction event triggered by background!');
         if (typeof UfoAbductionEvent !== 'undefined') {
           UfoAbductionEvent.trigger(this);
         }
         break;
 
       case 'TRIGGER_CLOUD_EVENT':
-        console.log('[PetManager] Cloud event triggered by background!');
+        this.logger.log('[PetManager] Cloud event triggered by background!');
         if (typeof CloudEvent !== 'undefined') {
           CloudEvent.trigger(this);
         }
@@ -116,11 +117,11 @@ class PetManager {
   createPetFromData(petData) {
     const speciesData = this.speciesManager.getSpecies(petData.species);
     if (!speciesData) {
-      console.error('[PetManager] ❌ Species data not found:', petData.species);
+      this.logger.error('[PetManager] ❌ Species data not found:', petData.species);
       return null;
     }
     
-    console.log('[PetManager] 🐾 Creating pet:', petData.species, {
+    this.logger.log('[PetManager] 🐾 Creating pet:', petData.species, {
       animations: speciesData.animations?.length || 0,
       movementPath: speciesData.movementPath,
       dragPath: speciesData.dragPath,
@@ -134,7 +135,7 @@ class PetManager {
     pet.direction = petData.direction || 1;
     this.pets.push(pet);
     
-    console.log('[PetManager] ✅ Created synced pet:', petData.species);
+    this.logger.log('[PetManager] ✅ Created synced pet:', petData.species);
     return pet;
   }
   
@@ -236,7 +237,7 @@ class PetManager {
    */
   addEphemeralEntity(entity) {
     this.ephemeralEntities.push(entity);
-    console.log('[PetManager] Added ephemeral entity:', entity.type, entity.id);
+    this.logger.log('[PetManager] Added ephemeral entity:', entity.type, entity.id);
   }
 
   /**
@@ -247,7 +248,7 @@ class PetManager {
     if (index >= 0) {
       this.ephemeralEntities[index].remove();
       this.ephemeralEntities.splice(index, 1);
-      console.log('[PetManager] Removed ephemeral entity:', entityId);
+      this.logger.log('[PetManager] Removed ephemeral entity:', entityId);
     }
   }
 
@@ -258,7 +259,7 @@ class PetManager {
     const toRemove = this.ephemeralEntities.filter(e => e.type === type);
     toRemove.forEach(e => e.remove());
     this.ephemeralEntities = this.ephemeralEntities.filter(e => e.type !== type);
-    console.log('[PetManager] Removed all ephemeral entities of type:', type);
+    this.logger.log('[PetManager] Removed all ephemeral entities of type:', type);
   }
 }
 
