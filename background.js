@@ -22,12 +22,12 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
     this.lastPhysicsUpdate = Date.now();
     this.viewport = PHYSICS.DEFAULT_VIEWPORT; // Use configuration constant
 
-    // Settings (loaded from chrome.storage)
+    // Settings (hardcoded - no user controls)
     this.settings = {
       petSize: DISPLAY.DEFAULT_PET_SIZE,
-      speedMultiplier: SPEED.DEFAULT_MULTIPLIER,
-      gravityEnabled: true,
-      randomEvents: true
+      speedMultiplier: 0.10, // Hardcoded to 0.10x for slower pets
+      gravityEnabled: true, // Always enabled
+      randomEvents: true // Always enabled
     };
 
     // Random Event Scheduler
@@ -70,17 +70,9 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
   }
 
   async loadSettings() {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(['pettySettings'], (result) => {
-        if (result.pettySettings) {
-          this.settings = { ...this.settings, ...result.pettySettings };
-          console.log(LOG.PREFIXES.BACKGROUND, 'Loaded settings:', this.settings);
-        } else {
-          console.log(LOG.PREFIXES.BACKGROUND, 'Using default settings:', this.settings);
-        }
-        resolve();
-      });
-    });
+    // Settings are now hardcoded, no need to load from storage
+    console.log(LOG.PREFIXES.BACKGROUND, 'Using hardcoded settings:', this.settings);
+    return Promise.resolve();
   }
   
   async loadSpeciesData() {
@@ -204,9 +196,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
         break;
 
       case 'RELOAD_SETTINGS':
-        // Reload settings when changed from popup
-        await this.loadSettings();
-        console.log(LOG.PREFIXES.BACKGROUND, 'Settings reloaded:', this.settings);
+        // Settings are hardcoded, nothing to reload
         sendResponse({ success: true });
         break;
     }
