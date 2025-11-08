@@ -48,6 +48,14 @@
           autoRemove: false // Manual control
         });
 
+        // Fallback to emoji if sprite doesn't load
+        if (ufo.img) {
+          ufo.img.onerror = () => {
+            console.log(LOG.PREFIXES.PET, 'UFO sprite not found, using emoji fallback');
+            ufo.element.innerHTML = '<div style="font-size: 80px; user-select: none;">🛸</div>';
+          };
+        }
+
         petManager.addEphemeralEntity(ufo);
 
         // State machine
@@ -77,7 +85,7 @@
                   abductionStartTime = Date.now();
 
                   // Start abduction sequence
-                  this.startAbduction(targetPet, petManager);
+                  UfoAbductionEvent.startAbduction(targetPet, petManager);
                 }
               });
               break;

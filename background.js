@@ -131,7 +131,7 @@ importScripts('species-list.js', 'config.js', 'species-validator.js', 'random-ev
     console.log(LOG.PREFIXES.BACKGROUND, 'Loaded', Object.keys(this.speciesData).length, '/', SPECIES_LIST.length, 'species for physics');
   }
   
-  handleMessage(message, sender, sendResponse) {
+  async handleMessage(message, sender, sendResponse) {
     let pet; // Shared variable for pet lookups
 
     switch (message.type) {
