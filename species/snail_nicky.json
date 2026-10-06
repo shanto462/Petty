@@ -1,0 +1,26 @@
+{
+  "animations": [
+    {
+      "id": "front",
+      "position": "fromEntityBottomLeft"
+    }
+  ],
+  "capabilities": [
+    "AnimatedSprite",
+    "AnimationsProvider",
+    "AutoRespawn",
+    "FlipHorizontallyWhenGoingLeft",
+    "LinearMovement",
+    "PetsSpritesProvider",
+    "AnimationsScheduler",
+    "Rotating",
+    "WallCrawler"
+  ],
+  "dragPath": "front",
+  "fps": 1,
+  "zIndex": 0,
+  "tags": ["slow motion", "memes"],
+  "id": "snail_nicky",
+  "movementPath": "front",
+  "speed": 0.2
+}

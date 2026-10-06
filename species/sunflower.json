@@ -1,0 +1,26 @@
+{
+  "animations": [
+    {
+      "id": "front",
+      "position": "fromEntityBottomLeft"
+    }
+  ],
+  "capabilities": [
+    "AnimatedSprite",
+    "AnimationsProvider",
+    "AutoRespawn",
+    "BounceOnLateralCollisions",
+    "FlipHorizontallyWhenGoingLeft",
+    "LinearMovement",
+    "PetsSpritesProvider",
+    "AnimationsScheduler",
+    "Rotating"
+  ],
+  "dragPath": "front",
+  "fps": 0.5,
+  "zIndex": 0,
+  "tags": ["plants", "decorations"],
+  "id": "sunflower",
+  "movementPath": "front",
+  "speed": 0
+}

@@ -1,0 +1,23 @@
+{
+  "animations": [
+    {
+      "id": "front",
+      "position": "fromEntityBottomLeft"
+    }
+  ],
+  "capabilities": [
+    "AnimatedSprite",
+    "AnimationsProvider",
+    "AutoRespawn",
+    "PetsSpritesProvider",
+    "LinearMovement",
+    "SleepingPlace"
+  ],
+  "dragPath": "front",
+  "fps": 0.5,
+  "zIndex": 100,
+  "tags": ["decorations"],
+  "id": "cat_house",
+  "movementPath": "front",
+  "speed": 0
+}

@@ -1,0 +1,75 @@
+/* Petty - pets rendered on top of web pages.
+   Selectors are namespaced and reset common properties so host page styles cannot break the sprites. */
+
+.petty-pet,
+.petty-ephemeral {
+  position: fixed;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-sizing: content-box;
+  user-select: none;
+}
+
+.petty-pet {
+  pointer-events: auto;
+  cursor: grab;
+  will-change: transform; /* Hint for GPU acceleration */
+}
+
+.petty-ephemeral {
+  pointer-events: none;
+}
+
+.petty-pet:active {
+  cursor: grabbing;
+}
+
+.petty-pet.dragging {
+  cursor: grabbing;
+  opacity: 0.95;
+}
+
+.petty-pet img,
+.petty-ephemeral img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  filter: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  backface-visibility: hidden; /* Prevent subpixel rendering issues */
+  transform: translateZ(0); /* Force GPU acceleration */
+}
+
+/* Flipped sprite for left movement */
+.petty-pet.flipped img {
+  transform: scaleX(-1);
+}
+
+.petty-emoji {
+  line-height: 1;
+  user-select: none;
+}
+
+/* Debug bubble animation */
+@keyframes petty-bubble-fade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -100%) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) translateY(0);
+  }
+}

@@ -1,0 +1,150 @@
+# Petty
+
+Pixel pets that walk, sleep and play on top of every browser tab.
+
+[![CI](https://github.com/shanto462/Petty/actions/workflows/ci.yml/badge.svg)](https://github.com/shanto462/Petty/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/shanto462/Petty/actions/workflows/codeql.yml/badge.svg)](https://github.com/shanto462/Petty/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](LICENSE)
+![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?logo=googlechrome&logoColor=white)
+
+![Pets walking along the bottom of a web page while a UFO flies in](docs/images/demo.gif)
+
+## Features
+
+- **43 animated pixel pets**: cats, dinosaurs, frogs, pandas, sloths, a UFO and more.
+- **Alive on every page**: pets walk along the bottom of the window, turn at the edges, and stop now and then to eat, sleep or play.
+- **Drag and drop**: pick up any pet and drop it somewhere else. It falls back to the ground.
+- **Synced across tabs**: switch tabs and your pets are right where you left them.
+- **Random events**: once in a while a UFO abducts a pet (and brings it back), or a rain cloud follows one around.
+- **Light, dark or auto** theme in the popup.
+- **Private by design**: no tracking, no network requests, no account.
+
+| Light                                                   | Dark                                                        |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| ![The Petty popup in light mode](docs/images/popup.png) | ![The Petty popup in dark mode](docs/images/popup-dark.png) |
+
+## Install
+
+Petty works in Chrome 110 or newer and in other Chromium browsers such as Edge, Brave, Arc and Opera.
+
+### From a release
+
+1. Download `petty-<version>.zip` from the [latest release](https://github.com/shanto462/Petty/releases/latest).
+2. Unzip it.
+3. Open `chrome://extensions` and turn on **Developer mode** (top right).
+4. Click **Load unpacked** and select the unzipped folder.
+
+### From source
+
+```bash
+git clone https://github.com/shanto462/Petty.git
+cd Petty
+npm ci
+npm run build
+```
+
+Then load the `dist/petty` folder with **Load unpacked**.
+
+## Usage
+
+- Click the Petty icon in the toolbar, then click a pet to add it. Click it again to remove it.
+- Drag a pet with the mouse to move it.
+- **Clear all** removes every pet. Click it twice to confirm.
+- Use the search box or the category chips to find a pet. Scroll the chips with the mouse wheel.
+- Pick **Light**, **Auto** or **Dark** with the switch in the top right corner.
+
+Good to know:
+
+- Chrome does not let extensions run on `chrome://` pages or the Chrome Web Store, so pets do not appear there.
+- After you update or reload the extension, refresh open tabs to bring the pets back.
+
+## Permissions and privacy
+
+| Permission                     | Why Petty needs it                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `storage`                      | Remembers which pets you added (synced with your Chrome profile) and where they were.                   |
+| `alarms`                       | Schedules the occasional random event, such as the UFO.                                                 |
+| Content script on all websites | Draws the pets on the pages you visit. Petty only adds its own elements; it does not read page content. |
+
+Petty collects nothing and sends nothing anywhere. See [PRIVACY.md](PRIVACY.md).
+
+## Development
+
+You need [Node.js](https://nodejs.org/) 22 or newer (see `.nvmrc`).
+
+```bash
+npm ci
+npx playwright install chromium   # Once, for the end-to-end tests
+npm run check                     # Lint, unit tests, build and end-to-end tests
+```
+
+| Script                | What it does                                                                 |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `npm run build`       | Minifies `src/` into `dist/petty/` and writes `dist/petty-<version>.zip`.    |
+| `npm run generate`    | Rebuilds `src/shared/catalog.js` after you change `species/` or the sprites. |
+| `npm run lint`        | Runs ESLint and checks formatting with Prettier.                             |
+| `npm run format`      | Formats all files with Prettier.                                             |
+| `npm test`            | Runs the unit tests.                                                         |
+| `npm run test:e2e`    | Loads the built extension in Chromium and tests it with Playwright.          |
+| `npm run screenshots` | Regenerates the images in `docs/images` (the GIF needs `ffmpeg`).            |
+| `npm run check`       | Runs everything CI runs.                                                     |
+
+For a quick edit loop, load the `src/` folder itself with **Load unpacked**. After a change, click the reload icon on `chrome://extensions` and refresh the page.
+
+### Project layout
+
+```text
+src/
+  manifest.json
+  background/        Service worker: pet roster, saved positions, random events
+  content/           Runs inside web pages: physics loop, sprites, dragging, events
+  popup/             Toolbar popup
+  shared/            Config, physics, species access, generated catalog
+  assets/sprites/    Pixel art frames, named <pet>_<animation>-<frame>.png
+species/             One JSON definition per pet, compiled into the catalog
+scripts/             Build, catalog generator, screenshots, version sync
+test/unit/           Unit tests (node:test)
+test/e2e/            End-to-end tests (Playwright)
+```
+
+### How it works
+
+- **The visible tab runs the physics.** It steps gravity, walking and wall bounces at a fixed 60 steps per second on `requestAnimationFrame`, which Chrome keeps at full speed for visible pages and pauses for hidden ones.
+- **The service worker is the shared store.** It keeps the roster in `chrome.storage.sync` and the last positions in `chrome.storage.session`. The visible tab reports positions once a second and when you leave it. The next tab you open continues from there.
+- **Why not run physics in the service worker?** Chrome stops extension service workers when they are idle and does not run their timers at a steady rate. Pets used to slow down or freeze whenever the popup was closed. See Chrome's notes on the [service worker lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle) and on [timers in service workers](https://developer.chrome.com/docs/extensions/develop/migrate/to-service-workers).
+
+### Adding a pet
+
+1. Add the frames to `src/assets/sprites/`, named `<pet>_<animation>-<n>.png` with `n` starting at 0. Every pet needs at least `front` and its movement animation (usually `walk`).
+2. Add `species/<pet>.json`. Copying an existing file such as `species/cat.json` is the easiest start.
+3. Run `npm run generate`, then `npm test`. The tests check that every animation a pet uses has frames.
+4. Only add art you made yourself or that is licensed for this use. See [NOTICE.md](NOTICE.md).
+
+## Releasing
+
+1. In a pull request, bump the version and update `CHANGELOG.md`:
+
+   ```bash
+   npm version minor --no-git-tag-version   # Also updates src/manifest.json
+   ```
+
+2. After the pull request is merged, tag the merge commit and push the tag:
+
+   ```bash
+   git tag v2.2.0
+   git push origin v2.2.0
+   ```
+
+The [Release workflow](.github/workflows/release.yml) builds and tests the tag, then publishes `petty-<version>.zip` on the Releases page with a signed build provenance attestation.
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). To report a security problem, follow [SECURITY.md](SECURITY.md).
+
+## Credits
+
+Petty is an independent browser port of [Bit Therapy](https://github.com/curzel-it) (formerly "Desktop Pets"), the macOS app by Federico Curzel. The pet behaviors, species definitions and pixel art come from that project. Petty is not affiliated with or endorsed by its author.
+
+## License
+
+The source code is released under the [MIT License](LICENSE). **The pixel art is not covered by the MIT License.** See [NOTICE.md](NOTICE.md) for the terms that apply to the sprites.

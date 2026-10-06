@@ -1,0 +1,53 @@
+{
+  "name": "petty",
+  "version": "2.1.0",
+  "description": "Pixel-art pets that walk, sleep and play on top of every browser tab. A Manifest V3 Chrome extension.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Md. Shalah Uddin (https://github.com/shanto462)",
+  "homepage": "https://github.com/shanto462/Petty#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shanto462/Petty.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shanto462/Petty/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "generate": "node scripts/generate-catalog.mjs",
+    "build": "node scripts/build.mjs",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "test": "node --test \"test/unit/*.test.mjs\"",
+    "test:e2e": "playwright test",
+    "screenshots": "node scripts/screenshots.mjs",
+    "check": "npm run lint && npm test && npm run build && npm run test:e2e",
+    "minify:js": "terser",
+    "minify:css": "csso",
+    "version": "node scripts/sync-version.mjs && prettier --write src/manifest.json && git add src/manifest.json"
+  },
+  "keywords": [
+    "chrome-extension",
+    "manifest-v3",
+    "pets",
+    "desktop-pets",
+    "pixel-art"
+  ],
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "csso": "^5.0.5",
+    "csso-cli": "^4.0.2",
+    "eslint": "^10.12.0",
+    "fflate": "^0.8.3",
+    "globals": "^17.13.0",
+    "html-minifier-terser": "^7.2.0",
+    "javascript-obfuscator": "^5.9.0",
+    "prettier": "^3.9.9",
+    "terser": "^5.51.2"
+  }
+}

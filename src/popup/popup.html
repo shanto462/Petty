@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Petty</title>
+    <link rel="stylesheet" href="popup.css" />
+    <script src="theme.js"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="/assets/sprites/cat_front-0.png" alt="" width="28" height="28" />
+        </span>
+        <div class="brand-text">
+          <h1 class="brand-name">Petty</h1>
+          <p class="brand-tagline">Pets for every tab</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="count-pill" id="count-pill" title="Pets on screen">
+          <span class="count-dot" aria-hidden="true"></span>
+          <span id="total-count">0</span>&nbsp;on screen
+        </span>
+        <div class="theme-switch" id="theme-switch" role="group" aria-label="Theme">
+          <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+              />
+            </svg>
+          </button>
+          <button type="button" data-theme-choice="auto" title="Match system theme" aria-label="Match system theme">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="12" rx="2" />
+              <path d="M8 20h8M12 16v4" />
+            </svg>
+          </button>
+          <button type="button" data-theme-choice="dark" title="Dark theme" aria-label="Dark theme">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <section class="active-section" aria-labelledby="active-title">
+      <div class="section-head">
+        <h2 id="active-title" class="eyebrow">On screen</h2>
+        <button type="button" class="text-button" id="remove-all" hidden>Clear all</button>
+      </div>
+      <div class="active-list scroll-row" id="active-pets-list" aria-live="polite">
+        <p class="no-active-pets">No pets yet. Pick one below and it will appear on your tabs.</p>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <label class="search">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+        <span class="visually-hidden">Search pets</span>
+        <input type="search" id="search" placeholder="Search pets" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="chips scroll-row" id="tag-filters" role="group" aria-label="Filter by category"></div>
+    </div>
+
+    <main class="catalog" id="species-grid" aria-label="All pets">
+      <div class="loading">Loading pets...</div>
+    </main>
+
+    <footer class="app-footer">
+      <span id="species-count-bar" aria-live="polite">
+        Showing <strong id="shown-count">0</strong> of <strong id="species-count">0</strong> pets
+      </span>
+      <span class="footer-hint">Drag pets anywhere on the page</span>
+    </footer>
+
+    <div class="toast" id="toast" role="alert" hidden></div>
+
+    <script src="/shared/catalog.js"></script>
+    <script src="/shared/config.js"></script>
+    <script src="/shared/logger.js"></script>
+    <script src="/shared/settings.js"></script>
+    <script src="/shared/species-validator.js"></script>
+    <script src="/shared/messaging.js"></script>
+    <script src="/shared/species-manager.js"></script>
+    <script src="popup-controller.js"></script>
+  </body>
+</html>

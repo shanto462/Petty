@@ -1,0 +1,52 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report a bug. Please fill in as much as you can.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem. Screenshots or a short video help a lot.
+      placeholder: The cat stops walking after I switch tabs.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Add the cat from the popup
+        2. Open a new tab
+        3. Switch back to the first tab
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: input
+    id: petty-version
+    attributes:
+      label: Petty version
+      description: Shown on chrome://extensions
+      placeholder: 2.1.0
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: Chrome 141 on macOS 26
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors
+      description: Open DevTools on the page (or "service worker" on chrome://extensions) and paste any errors.
+      render: text

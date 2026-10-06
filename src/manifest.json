@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "Petty: Browser Pets",
+  "short_name": "Petty",
+  "version": "2.1.0",
+  "description": "40+ animated pixel pets for your browser! Cats, frogs, dinosaurs and more. Click to toggle, drag to move. Synced across tabs.",
+  "homepage_url": "https://github.com/shanto462/Petty",
+  "minimum_chrome_version": "110",
+  "permissions": ["storage", "alarms"],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "shared/catalog.js",
+        "shared/config.js",
+        "shared/logger.js",
+        "shared/physics.js",
+        "shared/settings.js",
+        "shared/species-validator.js",
+        "shared/messaging.js",
+        "shared/species-manager.js",
+        "content/sprite-animator.js",
+        "content/ephemeral-entity.js",
+        "content/pet.js",
+        "content/ufo-abduction-event.js",
+        "content/cloud-event.js",
+        "content/pet-manager.js"
+      ],
+      "css": ["content/pet.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Petty",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/sprites/*.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

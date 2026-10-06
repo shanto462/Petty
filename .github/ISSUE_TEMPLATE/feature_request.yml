@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an idea for Petty
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      placeholder: I would like pets to avoid the area where I am typing.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: How could it work?
+      description: Any idea is welcome, even a rough one.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything else?
+      description: Alternatives you considered, examples from other apps, sketches.

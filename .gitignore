@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+petty-extension*.zip
+
+# Test output
+test-results/
+playwright-report/
+blob-report/
+coverage/
+
+# Python (legacy tooling)
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs and env
+*.log
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
