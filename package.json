@@ -19,6 +19,7 @@
   },
   "scripts": {
     "generate": "node scripts/generate-catalog.mjs",
+    "sprites": "node scripts/sprites/generate.mjs",
     "build": "node scripts/build.mjs",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",

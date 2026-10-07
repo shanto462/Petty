@@ -20,7 +20,9 @@ The Bit Therapy asset license allows uses such as commentary and non-commercial 
 
 > **Permission status:** pending. The maintainer is asking the author for written permission to include the sprites in Petty. Replace this line with the date and form of the permission once it is granted.
 
-If you fork Petty or reuse its code, do not redistribute the sprites unless you have your own permission from the author. You can replace them with your own art; see "Adding a pet" in the [README](README.md).
+**Exception:** the birds, trees and pond (`sparrow`, `robin`, `bluebird`, `kingfisher`, `tree_oak`, `tree_cherry` and `pond` frames) are original Petty art, drawn by the code in [`scripts/sprites/`](scripts/sprites/). They are not from Bit Therapy and are covered by the MIT License in [LICENSE](LICENSE).
+
+If you fork Petty or reuse its code, do not redistribute the Bit Therapy sprites unless you have your own permission from the author. You can replace them with your own art; see "Adding a pet" in the [README](README.md).
 
 ## Characters and trademarks
 

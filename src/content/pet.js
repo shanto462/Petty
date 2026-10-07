@@ -54,6 +54,13 @@
         this.isSleeping = false; // For SleepingPlace interaction
         this.sleepingPlaceEnabled = true; // Cooldown for SleepingPlace capability
 
+        // Flying birds: read by the flight physics, set by the bird brain
+        this.isAirborne = false;
+        this.isPerched = false;
+        this.flightTarget = null;
+        this.cruiseY = null;
+        this.flightBoost = 1;
+
         // Track last rendered position to avoid unnecessary DOM updates
         this.lastRenderedX = null;
         this.lastRenderedY = null;
@@ -62,6 +69,7 @@
         this.element = null;
         this.img = null;
         this.animator = new SpriteAnimator(speciesId, speciesData);
+        this.brain = this.hasCapability(CAPABILITIES.FLYING) && window.BirdBrain ? new BirdBrain(this) : null;
         this.debugBubble = null; // Debug bubble element
 
         // Event handlers (store references for proper cleanup)
@@ -132,7 +140,9 @@
         this.updatePosition();
 
         // Start with appropriate animation
-        if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0) {
+        if (this.brain) {
+          this.brain.start();
+        } else if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0) {
           this.setAnimation(this.movementPath);
         } else {
           this.setAnimation(DEFAULT_ANIMATIONS.FRONT);
@@ -286,8 +296,14 @@
           this.img.src = result.frame;
         }
 
+        // Birds decide for themselves what comes after an animation
+        if (this.brain) {
+          if (result && result.status === 'completed') this.brain.onAnimationComplete(this.currentAnimation);
+          this.brain.update();
+        }
+
         // If animation completed, return to movement and schedule next animation
-        if (result && result.status === 'completed') {
+        if (result && result.status === 'completed' && !this.brain) {
           logger.log(LOG.PREFIXES.PET, this.speciesId, 'animation completed after', result.loops, 'loops');
 
           // Wake up if sleeping
@@ -608,6 +624,7 @@
         };
         this.velocity = { x: 0, y: 0 };
         this.element.classList.add(DISPLAY.DRAGGING_CLASS);
+        this.brain?.onDragStart();
         this.setAnimation(this.dragPath);
         e.preventDefault();
         e.stopPropagation();
@@ -648,7 +665,9 @@
         }).catch(() => {}); // Ignore errors
 
         // Resume movement
-        if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0) {
+        if (this.brain) {
+          this.brain.onDrop();
+        } else if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0) {
           this.setAnimation(this.movementPath);
         } else {
           this.setAnimation(DEFAULT_ANIMATIONS.FRONT);
@@ -705,6 +724,7 @@
         // Clear references
         this.img = null;
         this.animator = null;
+        this.brain = null;
 
         logger.log(LOG.PREFIXES.PET, this.speciesId, 'destroyed');
       }

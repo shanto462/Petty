@@ -1,0 +1,40 @@
+{
+  "animations": [
+    {
+      "id": "front",
+      "position": "fromEntityBottomLeft"
+    },
+    {
+      "id": "fly",
+      "position": "fromEntityBottomLeft"
+    },
+    {
+      "id": "eat",
+      "position": "fromEntityBottomLeft",
+      "requiredLoops": 2
+    },
+    {
+      "id": "sing",
+      "position": "fromEntityBottomLeft",
+      "requiredLoops": 2
+    }
+  ],
+  "capabilities": [
+    "AnimatedSprite",
+    "AnimationsProvider",
+    "AutoRespawn",
+    "BounceOnLateralCollisions",
+    "FlipHorizontallyWhenGoingLeft",
+    "LinearMovement",
+    "PetsSpritesProvider",
+    "Flying"
+  ],
+  "dragPath": "drag",
+  "fps": 12,
+  "zIndex": 5,
+  "tags": ["birds"],
+  "id": "bluebird",
+  "movementPath": "walk",
+  "speed": 0.7,
+  "flySpeed": 3.2
+}

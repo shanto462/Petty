@@ -83,6 +83,28 @@ test('pets can be dragged', async ({ extension, popup, demo }) => {
   await expect(pet).not.toHaveClass(/dragging/);
 });
 
+test('birds fly instead of falling, and trees stand on the ground', async ({ extension, popup, demo }) => {
+  await addPet(popup, 'tree_oak');
+  await addPet(popup, 'sparrow');
+  const page = await extension.context.newPage();
+  const errors = watchForErrors(page);
+  await page.goto(demo.url);
+
+  const tree = page.locator('.petty-pet[data-species="tree_oak"]');
+  const bird = page.locator('.petty-pet[data-species="sparrow"]');
+  await expect(bird.locator('img')).toHaveAttribute('src', /sparrow_fly-\d+\.png$/);
+  await page.waitForTimeout(1500);
+
+  const { height } = page.viewportSize();
+  const treeBox = await tree.boundingBox();
+  expect(Math.round(treeBox.y + treeBox.height)).toBe(height);
+  expect(treeBox.height).toBeGreaterThan(200); // Drawn at its own size, taller than a pet
+  // Birds cruise for several seconds before they land anywhere
+  const birdBox = await bird.boundingBox();
+  expect(birdBox.y + birdBox.height).toBeLessThan(height - 50);
+  expect(errors).toEqual([]);
+});
+
 test('remove all clears pets from every tab', async ({ extension, popup, demo }) => {
   await addPet(popup, 'cat');
   await addPet(popup, 'trex');

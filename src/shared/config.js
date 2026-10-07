@@ -89,6 +89,28 @@
     };
 
     /**
+     * Bird Constants
+     * Used by the bird brain (content/bird-brain.js) and flight physics
+     */
+    const BIRDS = {
+      CRUISE_MIN: 6000, // Shortest flight before a bird picks something to do (ms)
+      CRUISE_MAX: 14000,
+      PERCH_MIN: 12000, // How long a bird sits on a tree (ms)
+      PERCH_MAX: 28000,
+      GROUND_MIN: 6000, // How long a bird hops around on the ground (ms)
+      GROUND_MAX: 14000,
+      SING_MIN: 4000, // Pause between songs while perched (ms)
+      SING_MAX: 10000,
+      ALTITUDE_MIN: 0.08, // Cruising height range, as a fraction of the window height
+      ALTITUDE_MAX: 0.45,
+      HOVER_HEIGHT: 95, // How far above the water a fishing bird hovers (px)
+      DIVE_BOOST: 2.6, // Dive speed compared to normal flight
+      CATCH_CHANCE: 0.7, // Chance that a dive catches a fish
+      FEET: { x: 0.5, y: 0.98 }, // Where the feet are in a bird sprite (fractions)
+      WATERLINE: 0.8, // Water line in the splash sprite (fraction of its height)
+    };
+
+    /**
      * Species Data Constants
      * Configuration for species loading and management
      */
@@ -222,6 +244,10 @@
       LEAVES_POOP_STAINS: 'LeavesPoopStains',
       ROTATING: 'Rotating',
       AUTO_RESPAWN: 'AutoRespawn',
+      FLYING: 'Flying', // Birds: flies without gravity, perches on trees
+      FISHES: 'FishesInPonds', // Birds that dive into ponds for fish
+      PERCHING_PLACE: 'PerchingPlace', // Trees: birds sit on its perches
+      FISHING_SPOT: 'FishingSpot', // Ponds: fishing birds dive here
     };
 
     // Assign to global scope
@@ -231,6 +257,7 @@
       SPEED,
       DEFAULT_SETTINGS,
       ANIMATION,
+      BIRDS,
       SPECIES,
       TAG_EMOJI,
       LOG,

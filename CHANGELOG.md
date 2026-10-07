@@ -4,6 +4,13 @@ All notable changes to Petty are listed here. The format follows [Keep a Changel
 
 ## [Unreleased]
 
+### Added
+
+- Birds that fly: sparrow, robin, bluebird and kingfisher. They cruise across the page, sit on trees, and hop and peck on the ground. Songbirds sing on a branch.
+- Two trees (oak and cherry) with five perches each, and a pond with shimmering water and a fish.
+- The kingfisher fishes when a pond is on the page: it hovers, dives, and carries its catch to a free branch to eat it.
+- `npm run sprites` draws this new art in code (`scripts/sprites/`). It is Petty's own art and MIT licensed.
+
 ## [2.1.0] - 2026-10-07
 
 First public release.

@@ -1,0 +1,54 @@
+{
+  "animations": [
+    {
+      "id": "front",
+      "position": "fromEntityBottomLeft"
+    },
+    {
+      "id": "fly",
+      "position": "fromEntityBottomLeft"
+    },
+    {
+      "id": "fly_fish",
+      "position": "fromEntityBottomLeft"
+    },
+    {
+      "id": "hover",
+      "position": "fromEntityBottomLeft",
+      "requiredLoops": 4
+    },
+    {
+      "id": "dive",
+      "position": "fromEntityBottomLeft"
+    },
+    {
+      "id": "splash",
+      "position": "fromEntityBottomLeft",
+      "requiredLoops": 1
+    },
+    {
+      "id": "eat",
+      "position": "fromEntityBottomLeft",
+      "requiredLoops": 1
+    }
+  ],
+  "capabilities": [
+    "AnimatedSprite",
+    "AnimationsProvider",
+    "AutoRespawn",
+    "BounceOnLateralCollisions",
+    "FlipHorizontallyWhenGoingLeft",
+    "LinearMovement",
+    "PetsSpritesProvider",
+    "Flying",
+    "FishesInPonds"
+  ],
+  "dragPath": "drag",
+  "fps": 12,
+  "zIndex": 5,
+  "tags": ["birds", "water"],
+  "id": "kingfisher",
+  "movementPath": "walk",
+  "speed": 0.6,
+  "flySpeed": 3.6
+}
