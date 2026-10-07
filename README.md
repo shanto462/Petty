@@ -13,6 +13,7 @@ Pixel-art birds, trees and ponds that live on top of every browser tab.
 
 - **11 pixel-art pets, all drawn by Petty itself**: five birds, two trees and four kinds of pond.
 - **Birds, trees and ponds**: birds glide around and sit on trees. Songbirds sing on a branch or hop and peck on the ground. The kingfisher dives into a pond, catches a fish and eats it on a branch. Ponds come in four kinds: a lily pond with a frog, a koi pond with a red bridge, a reedy marsh, and a desert oasis whose palm tree birds can sit in.
+- **Life in the ponds**: now and then fish of different sizes leap out of the water. When nobody is around the oasis, a mermaid comes up onto her rock to brush her hair, and dives back in when a bird comes close.
 - **A heron in a straw hat**: it walks, practices crane-style kung fu, wades into the pond to catch a big carp, and sometimes flies through its own little storm.
 - **Alive on every page**: birds fly, land and walk along the bottom of the window; trees and ponds stand on it.
 - **Drag and drop**: pick up any pet and drop it somewhere else. A bird flies off; a tree or a pond goes back to the ground.

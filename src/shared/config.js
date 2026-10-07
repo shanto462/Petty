@@ -140,6 +140,34 @@
     };
 
     /**
+     * Pond Life
+     * Fish that leap out of ponds, and the oasis mermaid (content/pond-life.js).
+     * Sprite sizes are in sprite pixels; on screen everything is 1.5x (a 50 px pet sprite is 75 px).
+     */
+    const POND_LIFE = {
+      JUMP_MIN: 4000, // Pause between two leaps from the same pond (ms)
+      JUMP_MAX: 12000,
+      SCHOOL_CHANCE: 0.25, // Chance that one or two more fish follow the first
+      SCHOOL_GAP: 280, // Time between fish of a school (ms)
+      FISH: {
+        small: { sprite: 14, span: 40, weight: 0.5 }, // span: how far the leap goes (screen px)
+        medium: { sprite: 18, span: 60, weight: 0.35 },
+        large: { sprite: 24, span: 85, weight: 0.15 },
+      },
+      FISH_ANGLES: [-75, -60, -45, -30, -15, 0, 15, 30, 45, 60, 75], // Frame <i> shows the fish at this angle
+      SPLASH: { sprite: 16, waterline: 13, frames: 4, duration: 360 },
+      MERMAID: {
+        sprite: 44,
+        hips: [24, 33], // Where she sits, in her sprite
+        fps: 8,
+        frames: { rise: 7, brush: 16, dive: 7 },
+        quiet: 6000, // Nobody near for this long, and she comes up (ms)
+        shyDistance: 170, // A pet this close (screen px) and she dives
+        cooldown: 12000, // She stays under water at least this long after a dive (ms)
+      },
+    };
+
+    /**
      * Random Events
      * The UFO uses a Bit Therapy sprite (ufo_front-0.png), which Petty does not ship until the
      * author's permission is granted (see NOTICE.md), so it is off.
@@ -301,6 +329,7 @@
       ANIMATION,
       BIRDS,
       STORM_CLOUD,
+      POND_LIFE,
       RANDOM_EVENTS,
       SPECIES,
       TAG_EMOJI,

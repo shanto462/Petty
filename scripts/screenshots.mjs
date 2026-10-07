@@ -96,13 +96,16 @@ function writeGif({ dir, fps }, file, { skipSeconds = 0, colors = 96 } = {}) {
   console.log(`Wrote docs/images/${file}`);
 }
 
-/** Drags a pet along the bottom of the page so its center ends up at `x`. */
-async function dragTo(page, species, x) {
-  const box = await page.locator(`.petty-pet[data-species="${species}"]`).first().boundingBox();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(x, box.y + box.height / 2, { steps: 8 });
-  await page.mouse.up();
+/**
+ * Puts a pet's center at `x` (trees and ponds stay on the ground). Done in the content script,
+ * because a mouse drag grabs whichever pet happens to be on top at that spot.
+ */
+function placeAt(run, species, x) {
+  return run(`(() => {
+    const pet = petManager.pets.find((p) => p.speciesId === '${species}');
+    pet.position.x = ${x} - pet.currentSize.width / 2;
+    pet.updatePosition();
+  })()`);
 }
 
 /**
@@ -130,6 +133,7 @@ async function captureDemo(demo) {
   try {
     const page = await context.newPage();
     await page.goto(demo.url);
+    const run = await contentScript(page, extensionId);
 
     const popup = await addPets(context, extensionId, PETS);
     // Reset scroll and hover from the clicks, then let transitions finish
@@ -145,9 +149,9 @@ async function captureDemo(demo) {
 
     await page.bringToFront();
     await page.waitForTimeout(1500);
-    await dragTo(page, 'tree_oak', 180);
-    await dragTo(page, 'pond_koi', 640);
-    await dragTo(page, 'tree_cherry', 1090);
+    await placeAt(run, 'tree_oak', 200);
+    await placeAt(run, 'pond_koi', 640);
+    await placeAt(run, 'tree_cherry', 1080);
     await page.waitForTimeout(9000); // Birds cruise for a while before they land, perch or fish
     await page.screenshot({ path: path.join(OUT, 'demo.png') });
     console.log('Wrote docs/images/demo.png');
@@ -169,6 +173,7 @@ async function captureBirds(demo) {
   try {
     const page = await context.newPage();
     await page.goto(demo.url);
+    const run = await contentScript(page, extensionId);
     const popup = await addPets(context, extensionId, BIRDS);
     // A second kingfisher (its popup tile is already on, so ask the background directly)
     await popup.evaluate(() => chrome.runtime.sendMessage({ type: 'ADD_PET', species: 'kingfisher' }));
@@ -177,9 +182,9 @@ async function captureBirds(demo) {
     await page.waitForTimeout(1500);
 
     // Spread the scenery along the bottom: oak on the left, pond in the middle, cherry on the right
-    await dragTo(page, 'tree_oak', 180);
-    await dragTo(page, 'pond', 640);
-    await dragTo(page, 'tree_cherry', 1090);
+    await placeAt(run, 'tree_oak', 200);
+    await placeAt(run, 'pond', 640);
+    await placeAt(run, 'tree_cherry', 1080);
     frames = await captureFrames(page, BIRDS_SECONDS, BIRDS_CLIP);
   } finally {
     await context.close();
@@ -200,7 +205,7 @@ async function captureHeron(demo) {
     await popup.close();
     await page.bringToFront();
     await page.waitForTimeout(1500);
-    await dragTo(page, 'pond', 640);
+    await placeAt(run, 'pond', 640);
 
     const heron = "petManager.pets.find((pet) => pet.speciesId === 'heron')";
     const pond = "petManager.pets.find((pet) => pet.speciesId === 'pond')";

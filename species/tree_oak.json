@@ -3,22 +3,37 @@
     {
       "id": "front",
       "position": "fromEntityBottomLeft",
-      "size": [2, 3]
+      "size": [5.2, 3.9]
     }
   ],
   "capabilities": ["AnimatedSprite", "AnimationsProvider", "AutoRespawn", "PetsSpritesProvider", "PerchingPlace"],
   "dragPath": "front",
-  "fps": 1.5,
+  "fps": 2,
   "zIndex": -100,
   "tags": ["plants", "decorations"],
   "id": "tree_oak",
   "movementPath": "front",
   "speed": 0,
   "perches": [
-    { "x": 0.18, "y": 0.607 },
-    { "x": 0.84, "y": 0.553 },
-    { "x": 0.34, "y": 0.1 },
-    { "x": 0.5, "y": 0.04 },
-    { "x": 0.66, "y": 0.08 }
+    {
+      "x": 0.365,
+      "y": 0.108
+    },
+    {
+      "x": 0.488,
+      "y": 0.128
+    },
+    {
+      "x": 0.604,
+      "y": 0.169
+    },
+    {
+      "x": 0.712,
+      "y": 0.2
+    },
+    {
+      "x": 0.846,
+      "y": 0.287
+    }
   ]
 }

@@ -10,6 +10,7 @@ const extensionGlobals = {
   EphemeralEntity: 'readonly',
   Pet: 'readonly',
   PetManager: 'readonly',
+  PondLife: 'readonly',
   RandomEventScheduler: 'readonly',
   SpeciesManager: 'readonly',
   SpriteAnimator: 'readonly',

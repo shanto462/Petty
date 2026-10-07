@@ -82,6 +82,31 @@ test('a random event can only be on when its sprite ships', async () => {
   }
 });
 
+test('every pond has jumping-fish frames, and the oasis mermaid has all of hers', () => {
+  const { ASSETS_PATH } = ctx.PettyConfig.SPECIES;
+  const { FISH, FISH_ANGLES, SPLASH, MERMAID } = ctx.PettyConfig.POND_LIFE;
+  const exists = (name, i) => existsSync(path.join(SRC, ASSETS_PATH, `effect_${name}-${i}.png`));
+  const ponds = Object.values(species).filter((s) => s.capabilities.includes('FishingSpot'));
+  assert.ok(ponds.length > 0);
+  for (const pond of ponds) {
+    assert.ok(pond.fishJumps, `${pond.id} needs "fishJumps"`);
+    for (const size of Object.keys(FISH)) {
+      FISH_ANGLES.forEach((_, i) =>
+        assert.ok(exists(`fish_${pond.fishJumps}_${size}`, i), `${pond.id}: ${size} fish ${i}`),
+      );
+    }
+  }
+  for (let i = 0; i < SPLASH.frames; i++) assert.ok(exists('splash', i));
+  assert.ok(
+    ponds.some((p) => p.mermaid),
+    'some pond has a mermaid',
+  );
+  for (const [state, count] of Object.entries(MERMAID.frames)) {
+    for (let i = 0; i < count; i++) assert.ok(exists(`mermaid_${state}`, i), `mermaid ${state} ${i}`);
+    assert.ok(!exists(`mermaid_${state}`, count), `MERMAID.frames.${state} matches the files`);
+  }
+});
+
 test('every frame of the storm cloud exists', () => {
   const { ASSETS_PATH } = ctx.PettyConfig.SPECIES;
   const { SPRITE, FRAMES } = ctx.PettyConfig.STORM_CLOUD;
