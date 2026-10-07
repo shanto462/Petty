@@ -4,6 +4,10 @@ All notable changes to Petty are listed here. The format follows [Keep a Changel
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-10-07
+
+A major release: Petty now ships only its own art. The Bit Therapy pets are switched off, so any of them you had added are gone after the update; the new birds, heron, trees and ponds take their place.
+
 ### Changed
 
 - Petty now shows and ships only its own art. The Bit Therapy pets stay in the repository but are switched off until their author gives permission (see NOTICE.md), and so is the UFO random event, which uses a Bit Therapy sprite. The extension zip shrinks from 4.5 MB to under 1 MB.
@@ -69,5 +73,6 @@ First public release.
 - All messages from web pages to the service worker are validated, and only known fields are accepted.
 - No `innerHTML` in code that runs inside web pages.
 
-[Unreleased]: https://github.com/shanto462/Petty/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/shanto462/Petty/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/shanto462/Petty/releases/tag/v3.0.0
 [2.1.0]: https://github.com/shanto462/Petty/releases/tag/v2.1.0

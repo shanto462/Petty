@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Petty: Browser Pets",
   "short_name": "Petty",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Pixel-art birds, trees and ponds on every tab: a heron in a straw hat, a fishing kingfisher, singing songbirds. Drag them!",
   "homepage_url": "https://github.com/shanto462/Petty",
   "minimum_chrome_version": "110",
