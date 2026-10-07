@@ -1,6 +1,6 @@
 {
   "name": "petty",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Pixel-art pets that walk, sleep and play on top of every browser tab. A Manifest V3 Chrome extension.",
   "private": true,
   "type": "module",
