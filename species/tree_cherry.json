@@ -3,22 +3,37 @@
     {
       "id": "front",
       "position": "fromEntityBottomLeft",
-      "size": [2, 3]
+      "size": [5.2, 3.9]
     }
   ],
   "capabilities": ["AnimatedSprite", "AnimationsProvider", "AutoRespawn", "PetsSpritesProvider", "PerchingPlace"],
   "dragPath": "front",
-  "fps": 1.5,
+  "fps": 2,
   "zIndex": -100,
   "tags": ["plants", "decorations"],
   "id": "tree_cherry",
   "movementPath": "front",
   "speed": 0,
   "perches": [
-    { "x": 0.18, "y": 0.607 },
-    { "x": 0.84, "y": 0.553 },
-    { "x": 0.34, "y": 0.1 },
-    { "x": 0.5, "y": 0.04 },
-    { "x": 0.66, "y": 0.08 }
+    {
+      "x": 0.25,
+      "y": 0.205
+    },
+    {
+      "x": 0.435,
+      "y": 0.097
+    },
+    {
+      "x": 0.658,
+      "y": 0.221
+    },
+    {
+      "x": 0.762,
+      "y": 0.308
+    },
+    {
+      "x": 0.881,
+      "y": 0.415
+    }
   ]
 }

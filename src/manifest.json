@@ -25,6 +25,7 @@
         "content/sprite-animator.js",
         "content/ephemeral-entity.js",
         "content/storm-cloud.js",
+        "content/pond-life.js",
         "content/bird-brain.js",
         "content/pet.js",
         "content/ufo-abduction-event.js",

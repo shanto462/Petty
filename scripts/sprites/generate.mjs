@@ -7,8 +7,11 @@ import path from 'node:path';
 import { BIRDS, drawBird, drawSplash } from './birds.mjs';
 import { heronAnimations } from './heron-animations.mjs';
 import { drawIcons } from './icon.mjs';
-import { drawPond, palmPerches, PONDS } from './ponds.mjs';
-import { drawStormCloud, drawTree, STORM_FRAMES, TREES } from './scenery.mjs';
+import { fishAnimations, FISH_LOOKS } from './fish.mjs';
+import { mermaidAnimations } from './mermaid.mjs';
+import { drawPond, mermaidSeat, palmPerches, PONDS } from './ponds.mjs';
+import { drawStormCloud, STORM_FRAMES } from './scenery.mjs';
+import { drawTree, TREE_HEIGHT, TREE_WIDTH, treePerches, TREES } from './trees.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const SPRITES_DIR = path.join(ROOT, 'src', 'assets', 'sprites');
@@ -189,8 +192,9 @@ const SPECIES = {
   robin: birdAnimations(BIRDS.robin),
   bluebird: birdAnimations(BIRDS.bluebird),
   kingfisher: birdAnimations(BIRDS.kingfisher, { fisher: true }),
-  tree_oak: { front: [0, 1, 0, -1].map((sway) => drawTree(TREES.oak, sway)) },
-  tree_cherry: { front: [0, 1, 0, -1].map((sway) => drawTree(TREES.cherry, sway)) },
+  ...Object.fromEntries(
+    Object.entries(TREES).map(([id, tree]) => [id, { front: [0, 1, 2, 3].map((frame) => drawTree(tree, frame)) }]),
+  ),
   ...Object.fromEntries(
     Object.entries(PONDS).map(([id, style]) => [
       id,
@@ -198,21 +202,43 @@ const SPECIES = {
     ]),
   ),
   heron: heronAnimations(),
-  // Not a pet: the storm cloud that follows the heron (effect_storm-<n>.png)
-  effect: { storm: Array.from({ length: STORM_FRAMES }, (_, frame) => drawStormCloud(frame)) },
+  // Not pets: the storm cloud, the jumping fish and their splash, and the oasis mermaid
+  // (effect_<name>-<n>.png)
+  effect: {
+    storm: Array.from({ length: STORM_FRAMES }, (_, frame) => drawStormCloud(frame)),
+    ...fishAnimations(),
+    ...Object.fromEntries(Object.entries(mermaidAnimations()).map(([id, frames]) => [`mermaid_${id}`, frames])),
+  },
 };
 
-// The birds aim at the numbers in species/<pond>.json, so they must match the art
+// The birds aim at the numbers in species/<tree or pond>.json, so they must match the art
 const PET_SIZE = 50; // Sprite pixels in one pet size (a pet is 75 px on screen)
 const mismatches = [];
+for (const [id, tree] of Object.entries(TREES)) {
+  const species = JSON.parse(await readFile(path.join(ROOT, 'species', `${id}.json`), 'utf8'));
+  const expected = { size: [TREE_WIDTH / PET_SIZE, TREE_HEIGHT / PET_SIZE], perches: treePerches(tree) };
+  const actual = { size: species.animations[0].size, perches: species.perches };
+  for (const [key, value] of Object.entries(expected)) {
+    if (JSON.stringify(actual[key]) !== JSON.stringify(value)) {
+      mismatches.push(`species/${id}.json: "${key}" should be ${JSON.stringify(value)}`);
+    }
+  }
+}
 for (const [id, style] of Object.entries(PONDS)) {
   const species = JSON.parse(await readFile(path.join(ROOT, 'species', `${id}.json`), 'utf8'));
   const expected = {
     size: [+(style.width / PET_SIZE).toFixed(3), +(style.height / PET_SIZE).toFixed(3)],
     water: style.water,
-    ...(style.features.includes('palm') && { perches: palmPerches(style) }),
+    ...(style.features.includes('palm') && { perches: palmPerches(style), mermaid: mermaidSeat(style) }),
   };
-  const actual = { size: species.animations[0].size, water: species.water, perches: species.perches };
+  const actual = {
+    size: species.animations[0].size,
+    water: species.water,
+    perches: species.perches,
+    mermaid: species.mermaid,
+  };
+  if (!FISH_LOOKS[species.fishJumps])
+    mismatches.push(`species/${id}.json: "fishJumps" must be one of ${Object.keys(FISH_LOOKS)}`);
   for (const [key, value] of Object.entries(expected)) {
     if (JSON.stringify(actual[key]) !== JSON.stringify(value)) {
       mismatches.push(`species/${id}.json: "${key}" should be ${JSON.stringify(value)}`);

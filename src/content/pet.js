@@ -70,6 +70,8 @@
         this.img = null;
         this.animator = new SpriteAnimator(speciesId, speciesData);
         this.brain = this.hasCapability(CAPABILITIES.FLYING) && window.BirdBrain ? new BirdBrain(this) : null;
+        // Ponds: leaping fish, and the oasis mermaid
+        this.pondLife = this.hasCapability(CAPABILITIES.FISHING_SPOT) && window.PondLife ? new PondLife(this) : null;
         this.debugBubble = null; // Debug bubble element
 
         // Event handlers (store references for proper cleanup)
@@ -295,6 +297,8 @@
         if (result && result.frameChanged && result.frame) {
           this.img.src = result.frame;
         }
+
+        this.pondLife?.update(timestamp);
 
         // Birds decide for themselves what comes after an animation
         if (this.brain) {
@@ -706,6 +710,7 @@
         }
 
         this.brain?.destroy(); // Removes a storm cloud, if any
+        this.pondLife?.destroy(); // Removes leaping fish and the mermaid
 
         // Remove debug bubble
         if (this.debugBubble) {
@@ -730,6 +735,7 @@
         this.img = null;
         this.animator = null;
         this.brain = null;
+        this.pondLife = null;
 
         logger.log(LOG.PREFIXES.PET, this.speciesId, 'destroyed');
       }

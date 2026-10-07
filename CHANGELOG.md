@@ -8,6 +8,7 @@ All notable changes to Petty are listed here. The format follows [Keep a Changel
 
 - Petty now shows and ships only its own art. The Bit Therapy pets stay in the repository but are switched off until their author gives permission (see NOTICE.md), and so is the UFO random event, which uses a Bit Therapy sprite. The extension zip shrinks from 4.5 MB to under 1 MB.
 - Birds glide down to a landing at a gentle angle instead of dropping straight down, and lean into their climbs and descents.
+- Trees are redrawn to look like real trees, and are bigger, so birds look small next to them. Each is grown from a branching skeleton: a short, stout trunk splits into limbs that fan out under a broad, uneven crown, with the limbs showing through the leaves. The cherry has pale blossoms and drops petals. Birds perch on the open tops of the crown, and `npm run sprites` checks the perch spots in `species/` against the art.
 
 ### Added
 
@@ -19,6 +20,8 @@ All notable changes to Petty are listed here. The format follows [Keep a Changel
 - With several ponds on the page, fishing birds spread out over them and move between them.
 - A new toolbar icon: the heron's head in its straw hat, on a round sky badge (16, 32, 48 and 128 px).
 - The storm cloud random event is back with Petty's own animated cloud: now and then it follows one of your pets around for half a minute to a minute.
+- Fish of different sizes leap out of the ponds in an arc and splash back in, sometimes a few in a row: silver fish, koi, carp or golden fish, depending on the pond.
+- A mermaid lives in the oasis. When no pet has been near for a while, she rises onto her rock and brushes her hair; when a bird comes close, she dives back in.
 - `npm run sprites` draws this new art in code (`scripts/sprites/`). It is Petty's own art and MIT licensed.
 
 ### Fixed

@@ -418,8 +418,10 @@ const FEATURES = {
 
   sandRipples() {}, // Drawn with the ground
 
-  // Warm sandstone rocks on the bank
+  // Warm sandstone rocks on the bank, and a flat one in the water where the mermaid sits
   rocks(pond, style, { cx, cy, rx, ry }) {
+    const [sx, sy] = mermaidRock(style);
+    drawStone(pond, sx, sy, 8, 0.42, '#c9b493', '#8e7b62');
     drawStone(pond, cx + rx * 0.95, cy - 1, 6, 0.7, '#e0a96a', '#b07a42');
     drawStone(pond, cx + rx * 1.12, cy + 2, 3.5, 0.7, '#e0a96a', '#b07a42');
     drawStone(pond, cx - rx * 0.6, cy + ry + 2.2, 3, 0.6, '#e0a96a', '#b07a42');
@@ -430,7 +432,18 @@ const FEATURES = {
   },
 };
 
-// --- The oasis palm ---
+// --- The oasis rock and palm ---
+
+/** Center of the flat rock in the oasis water, in sprite pixels. */
+function mermaidRock({ width, height, water }) {
+  return [width * (water.x + water.rx * 0.42), height * water.y - 1];
+}
+
+/** Where the mermaid sits (the top of the rock), as fractions of the pond sprite. */
+export function mermaidSeat(style) {
+  const [x, y] = mermaidRock(style);
+  return { x: +(x / style.width).toFixed(3), y: +((y - 3) / style.height).toFixed(3) };
+}
 
 const FRONDS = [
   [-150, 30],

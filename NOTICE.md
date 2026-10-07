@@ -22,7 +22,7 @@ The Bit Therapy asset license allows uses such as commentary and non-commercial 
 
 > **Permission status:** pending. The maintainer is asking the author for written permission to include the sprites in Petty. Replace this line with the date and form of the permission once it is granted.
 
-**Petty's own art:** the birds, heron, trees, ponds and storm cloud (`sparrow`, `robin`, `bluebird`, `kingfisher`, `heron`, `tree_oak`, `tree_cherry`, `pond`, `pond_koi`, `pond_marsh`, `pond_oasis` and `effect_storm` frames, and the toolbar icons in `src/icons/`) are original Petty art, drawn by the code in [`scripts/sprites/`](scripts/sprites/). They are not from Bit Therapy and are covered by the MIT License in [LICENSE](LICENSE).
+**Petty's own art:** the birds, heron, trees, ponds and storm cloud (`sparrow`, `robin`, `bluebird`, `kingfisher`, `heron`, `tree_oak`, `tree_cherry`, `pond`, `pond_koi`, `pond_marsh`, `pond_oasis` and `effect_*` frames such as the storm cloud, the jumping fish and the mermaid, and the toolbar icons in `src/icons/`) are original Petty art, drawn by the code in [`scripts/sprites/`](scripts/sprites/). They are not from Bit Therapy and are covered by the MIT License in [LICENSE](LICENSE).
 
 If you fork Petty or reuse its code, do not redistribute the Bit Therapy sprites unless you have your own permission from the author. You can replace them with your own art; see "Adding a pet" in the [README](README.md).
 
