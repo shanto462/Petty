@@ -13,6 +13,7 @@ const extensionGlobals = {
   RandomEventScheduler: 'readonly',
   SpeciesManager: 'readonly',
   SpriteAnimator: 'readonly',
+  StormCloud: 'readonly',
   UfoAbductionEvent: 'readonly',
 };
 

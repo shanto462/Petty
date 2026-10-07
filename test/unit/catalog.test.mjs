@@ -76,7 +76,7 @@ test('the build ships only sprites of enabled species and Petty’s own effects'
 test('a random event can only be on when its sprite ships', async () => {
   const shipped = await shippedSprites();
   const { RANDOM_EVENTS, SPECIES } = ctx.PettyConfig;
-  const sprites = { UFO_ABDUCTION: SPECIES.EFFECT_SPRITES.UFO, RAIN_CLOUD: SPECIES.EFFECT_SPRITES.CLOUD };
+  const sprites = { UFO_ABDUCTION: SPECIES.EFFECT_SPRITES.UFO, STORM_CLOUD: SPECIES.EFFECT_SPRITES.CLOUD };
   for (const [event, on] of Object.entries(RANDOM_EVENTS)) {
     if (on) assert.ok(shipped.has(sprites[event]), `${event} is on, but ${sprites[event]} is not shipped`);
   }
@@ -84,7 +84,7 @@ test('a random event can only be on when its sprite ships', async () => {
 
 test('every frame of the storm cloud exists', () => {
   const { ASSETS_PATH } = ctx.PettyConfig.SPECIES;
-  const { SPRITE, FRAMES } = ctx.PettyConfig.BIRDS.STORM_CLOUD;
+  const { SPRITE, FRAMES } = ctx.PettyConfig.STORM_CLOUD;
   for (let i = 0; i < FRAMES; i++) {
     const file = path.join(SRC, ASSETS_PATH, `${SPRITE}-${i}.png`);
     assert.ok(existsSync(file), `${ASSETS_PATH}${SPRITE}-${i}.png is missing`);

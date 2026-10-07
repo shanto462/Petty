@@ -28,7 +28,7 @@
         // Available events
         this.events = [
           { name: 'UFO Abduction', type: MESSAGE_TYPES.TRIGGER_UFO_ABDUCTION, flag: 'UFO_ABDUCTION' },
-          { name: 'Fantozzi Cloud', type: MESSAGE_TYPES.TRIGGER_CLOUD_EVENT, flag: 'RAIN_CLOUD' },
+          { name: 'Storm Cloud', type: MESSAGE_TYPES.TRIGGER_CLOUD_EVENT, flag: 'STORM_CLOUD' },
         ];
       }
 

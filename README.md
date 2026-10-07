@@ -17,6 +17,7 @@ Pixel-art birds, trees and ponds that live on top of every browser tab.
 - **Alive on every page**: birds fly, land and walk along the bottom of the window; trees and ponds stand on it.
 - **Drag and drop**: pick up any pet and drop it somewhere else. A bird flies off; a tree or a pond goes back to the ground.
 - **Synced across tabs**: switch tabs and your pets are right where you left them.
+- **Random events**: now and then a little storm cloud follows one of your pets around and rains on it.
 - **Light, dark or auto** theme in the popup.
 - **Private by design**: no tracking, no network requests, no account.
 

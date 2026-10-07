@@ -33,6 +33,17 @@ test('every file the manifest references exists', () => {
   }
 });
 
+test('every icon is the size its manifest entry says', () => {
+  for (const icons of [manifest.icons, manifest.action.default_icon]) {
+    assert.deepEqual(Object.keys(icons), ['16', '32', '48', '128']);
+    for (const [size, file] of Object.entries(icons)) {
+      const png = readFileSync(path.join(SRC, file));
+      // Width and height are the first two fields of the PNG header (IHDR)
+      assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [Number(size), Number(size)], file);
+    }
+  }
+});
+
 test('content scripts load the catalog and config before anything else', () => {
   const [{ js }] = manifest.content_scripts;
   assert.deepEqual(js.slice(0, 2), ['shared/catalog.js', 'shared/config.js']);

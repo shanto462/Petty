@@ -111,6 +111,25 @@ test('birds fly instead of falling, and trees stand on the ground', async ({ ext
   expect(errors).toEqual([]);
 });
 
+test('the storm cloud random event follows a pet with our own animated cloud', async ({ extension, popup, demo }) => {
+  await addPet(popup, 'sparrow');
+  const page = await extension.context.newPage();
+  const errors = watchForErrors(page);
+  await page.goto(demo.url);
+  await expect(page.locator('.petty-pet[data-species="sparrow"]')).toBeVisible();
+
+  await extension.worker.evaluate(async () => {
+    for (const tab of await chrome.tabs.query({})) {
+      chrome.tabs.sendMessage(tab.id, { type: 'TRIGGER_CLOUD_EVENT' }).catch(() => {});
+    }
+  });
+  const cloud = page.locator('.petty-ephemeral[data-entity-type="storm"] img');
+  await expect(cloud).toHaveAttribute('src', /assets\/sprites\/effect_storm-\d+\.png$/);
+  const first = await cloud.getAttribute('src');
+  await expect.poll(() => cloud.getAttribute('src')).not.toBe(first); // It rains: the frames change
+  expect(errors).toEqual([]);
+});
+
 test('remove all clears pets from every tab', async ({ extension, popup, demo }) => {
   await addPet(popup, 'sparrow');
   await addPet(popup, 'robin');

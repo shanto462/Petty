@@ -122,17 +122,31 @@
       STORM_MIN: 9000, // How long a storm flight lasts (ms)
       STORM_MAX: 15000,
       STORM_SPEED: 0.65, // Flight speed in a storm compared to calm weather
-      STORM_CLOUD: { SPRITE: 'effect_storm', FRAMES: 16, FPS: 8, WIDTH: 150, HEIGHT: 105 },
+    };
+
+    /**
+     * Storm Cloud
+     * The small rain cloud that trails a pet (content/storm-cloud.js): over a heron in a storm
+     * flight, and over any pet in the storm cloud random event
+     */
+    const STORM_CLOUD = {
+      SPRITE: 'effect_storm', // effect_storm-<n>.png, Petty's own art
+      FRAMES: 16,
+      FPS: 8,
+      WIDTH: 150,
+      HEIGHT: 105,
+      EVENT_MIN: 30000, // How long the random event follows a pet (ms)
+      EVENT_MAX: 60000,
     };
 
     /**
      * Random Events
-     * Both use Bit Therapy sprites (ufo_front-0.png and fantozzi_front-0.png), which Petty does
-     * not ship until the author's permission is granted (see NOTICE.md), so both are off.
+     * The UFO uses a Bit Therapy sprite (ufo_front-0.png), which Petty does not ship until the
+     * author's permission is granted (see NOTICE.md), so it is off.
      */
     const RANDOM_EVENTS = {
       UFO_ABDUCTION: false,
-      RAIN_CLOUD: false,
+      STORM_CLOUD: true,
     };
 
     /**
@@ -144,7 +158,7 @@
       ASSETS_PATH: 'assets/sprites/', // Path to pet sprite assets (relative to the extension root)
       EFFECT_SPRITES: {
         UFO: 'ufo_front-0.png', // UFO abduction random event
-        CLOUD: 'fantozzi_front-0.png', // Fantozzi rain cloud random event
+        CLOUD: 'effect_storm-0.png', // Storm cloud random event (first frame; see STORM_CLOUD)
       },
 
       // Fallback image paths for species thumbnails
@@ -286,6 +300,7 @@
       DEFAULT_SETTINGS,
       ANIMATION,
       BIRDS,
+      STORM_CLOUD,
       RANDOM_EVENTS,
       SPECIES,
       TAG_EMOJI,

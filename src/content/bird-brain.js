@@ -10,7 +10,7 @@
 (function () {
   if (window.BirdBrain) return;
 
-  const { BIRDS, CAPABILITIES, DISPLAY, SPECIES } = window.PettyConfig;
+  const { BIRDS, CAPABILITIES, DISPLAY } = window.PettyConfig;
   const logger = window.PettyLogger;
 
   const between = (min, max) => min + Math.random() * (max - min);
@@ -413,55 +413,13 @@
       this.pet.flightBoost = BIRDS.STORM_SPEED;
       this.nextAction = 0;
       this.pet.setAnimation('storm');
-      this.stormCloud = this.createStormCloud();
+      const manager = this.pet.petManager;
+      this.stormCloud = window.StormCloud && manager?.addEphemeralEntity ? StormCloud.follow(this.pet, manager) : null;
     }
 
     endStorm() {
       this.stormCloud?.remove();
       this.stormCloud = null;
-    }
-
-    /** Where the storm cloud hangs: just above the bird, so the rain falls on it. */
-    cloudPosition() {
-      const { WIDTH, HEIGHT } = BIRDS.STORM_CLOUD;
-      const { width } = this.size();
-      return { x: this.pet.position.x + width / 2 - WIDTH / 2, y: this.pet.position.y - HEIGHT * 0.55 };
-    }
-
-    createStormCloud() {
-      const manager = this.pet.petManager;
-      if (!window.EphemeralEntity || !manager?.addEphemeralEntity) return null;
-      const { SPRITE, FRAMES, FPS, WIDTH, HEIGHT } = BIRDS.STORM_CLOUD;
-      const frameUrl = (i) => chrome.runtime.getURL(`${SPECIES.ASSETS_PATH}${SPRITE}-${i}.png`);
-      // Warm the cache so the first loop of the cloud does not flicker
-      for (let i = 0; i < FRAMES; i++) new Image().src = frameUrl(i);
-
-      const cloud = new EphemeralEntity('storm', {
-        position: this.cloudPosition(),
-        size: WIDTH,
-        zIndex: 20, // Above the birds
-        imagePath: `${SPECIES.ASSETS_PATH}${SPRITE}-0.png`,
-        autoRemove: false,
-      });
-      if (cloud.img) cloud.img.style.height = `${HEIGHT}px`;
-      let shown = 0;
-      cloud.onUpdate = (entity, timestamp) => {
-        if (!this.isAlive(this.pet) || this.stormCloud !== entity) {
-          entity.remove();
-          return;
-        }
-        // Trail the bird a little, like a cloud pushed by the wind
-        const target = this.cloudPosition();
-        entity.position.x += (target.x - entity.position.x) * 0.12;
-        entity.position.y += (target.y - entity.position.y) * 0.12;
-        const frame = Math.floor(timestamp / (1000 / FPS)) % FRAMES;
-        if (frame !== shown && entity.img) {
-          shown = frame;
-          entity.img.src = frameUrl(frame);
-        }
-      };
-      manager.addEphemeralEntity(cloud);
-      return cloud;
     }
 
     // --- Hooks called by Pet ---

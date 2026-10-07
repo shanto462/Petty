@@ -148,8 +148,22 @@ test('a restarted worker resumes positions from session storage', async () => {
   assert.equal(pets[0].direction, -1);
 });
 
-test('random events stay off while their Bit Therapy art is disabled', async () => {
+test('only the storm cloud event runs: the UFO uses Bit Therapy art, which is switched off', async () => {
   const { chrome } = startWorker();
+  await send(chrome, { type: 'ADD_PET', species: 'sparrow' });
+  for (let i = 0; i < 10; i++) {
+    chrome.alarmListeners[0]({ name: 'petty-random-event' });
+    await settle();
+    await settle();
+  }
+  const triggers = chrome.sent.filter(({ message }) => message.type.startsWith('TRIGGER_'));
+  assert.equal(triggers.length, 10);
+  assert.ok(triggers.every(({ message }) => message.type === 'TRIGGER_CLOUD_EVENT'));
+});
+
+test('random events stay quiet when every event is switched off', async () => {
+  const { chrome, ctx } = startWorker();
+  Object.assign(ctx.PettyConfig.RANDOM_EVENTS, { UFO_ABDUCTION: false, STORM_CLOUD: false });
   await send(chrome, { type: 'ADD_PET', species: 'sparrow' });
   chrome.sent.length = 0;
   chrome.alarmListeners[0]({ name: 'petty-random-event' });
@@ -161,7 +175,7 @@ test('random events stay off while their Bit Therapy art is disabled', async () 
 
 test('random events go only to the active tab, and only when pets exist', async () => {
   const { chrome, ctx } = startWorker();
-  Object.assign(ctx.PettyConfig.RANDOM_EVENTS, { UFO_ABDUCTION: true, RAIN_CLOUD: true });
+  Object.assign(ctx.PettyConfig.RANDOM_EVENTS, { UFO_ABDUCTION: true, STORM_CLOUD: true });
   const [onAlarm] = chrome.alarmListeners;
 
   onAlarm({ name: 'petty-random-event' });

@@ -1,10 +1,12 @@
-// Draws Petty's own pixel art (birds, heron, trees, pond, storm cloud) and writes the frames to src/assets/sprites.
+// Draws Petty's own pixel art (birds, heron, trees, ponds, storm cloud, icon) and writes the frames
+// to src/assets/sprites and the icons to src/icons.
 // Usage: npm run sprites (then npm run generate to refresh the catalog)
 
 import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { BIRDS, drawBird, drawSplash } from './birds.mjs';
 import { heronAnimations } from './heron-animations.mjs';
+import { drawIcons } from './icon.mjs';
 import { drawPond, palmPerches, PONDS } from './ponds.mjs';
 import { drawStormCloud, drawTree, STORM_FRAMES, TREES } from './scenery.mjs';
 
@@ -164,14 +166,14 @@ function birdAnimations(bird, { fisher = false } = {}) {
     front: hold(idleFrames(bird), 3),
     walk: hopFrames(bird),
     fly: flyFrames(bird),
-    drag: dragFrames(bird),
+    drag: dragFrames(),
   };
   if (fisher) {
     Object.assign(animations, {
       eat: hold(eatFishFrames(bird), 3),
-      hover: hoverFrames(bird),
-      dive: diveFrames(bird),
-      splash: hold(splashFrames(bird), 2),
+      hover: hoverFrames(),
+      dive: diveFrames(),
+      splash: hold(splashFrames(), 2),
       fly_fish: flyFrames(bird, { fish: 'beak' }),
     });
   } else {
@@ -239,3 +241,11 @@ for (const [id, animations] of Object.entries(SPECIES)) {
   }
 }
 console.log(`Wrote ${written} frames for ${Object.keys(SPECIES).join(', ')}.`);
+
+// The toolbar and store icon
+const ICONS_DIR = path.join(ROOT, 'src', 'icons');
+const icons = drawIcons();
+await Promise.all(
+  Object.entries(icons).map(([size, canvas]) => writeFile(path.join(ICONS_DIR, `icon${size}.png`), canvas.toPng())),
+);
+console.log(`Wrote icons: ${Object.keys(icons).join(', ')} px.`);
