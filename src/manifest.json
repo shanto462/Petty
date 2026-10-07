@@ -3,7 +3,7 @@
   "name": "Petty: Browser Pets",
   "short_name": "Petty",
   "version": "2.1.0",
-  "description": "40+ animated pixel pets for your browser! Cats, frogs, dinosaurs and more. Click to toggle, drag to move. Synced across tabs.",
+  "description": "Pixel-art birds, trees and ponds on every tab: a heron in a straw hat, a fishing kingfisher, singing songbirds. Drag them!",
   "homepage_url": "https://github.com/shanto462/Petty",
   "minimum_chrome_version": "110",
   "permissions": ["storage", "alarms"],
@@ -24,6 +24,8 @@
         "shared/species-manager.js",
         "content/sprite-animator.js",
         "content/ephemeral-entity.js",
+        "content/storm-cloud.js",
+        "content/bird-brain.js",
         "content/pet.js",
         "content/ufo-abduction-event.js",
         "content/cloud-event.js",
@@ -38,12 +40,14 @@
     "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
   },
   "icons": {
     "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },

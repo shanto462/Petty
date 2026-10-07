@@ -4,6 +4,29 @@ All notable changes to Petty are listed here. The format follows [Keep a Changel
 
 ## [Unreleased]
 
+### Changed
+
+- Petty now shows and ships only its own art. The Bit Therapy pets stay in the repository but are switched off until their author gives permission (see NOTICE.md), and so is the UFO random event, which uses a Bit Therapy sprite. The extension zip shrinks from 4.5 MB to under 1 MB.
+- Birds glide down to a landing at a gentle angle instead of dropping straight down, and lean into their climbs and descents.
+
+### Added
+
+- Birds that fly: sparrow, robin, bluebird and kingfisher. They cruise across the page, sit on trees, and hop and peck on the ground. Songbirds sing on a branch.
+- Two trees (oak and cherry) with five perches each, and a pond with shimmering water and a fish.
+- The kingfisher fishes when a pond is on the page: it hovers, dives, and carries its catch to a free branch to eat it.
+- A heron in a straw hat, twice the size of a normal pet. It walks, practices crane-style kung fu, wades into a pond to strike at fish and swallow a big carp, and sometimes flies through its own storm cloud with rain and lightning.
+- Ponds are bigger and come in four kinds, each with its own shape and bank: a lily pond with a frog and a dragonfly, a kidney-shaped koi pond with a red bridge and a stone lantern, a wide reedy marsh with a log, and a desert oasis with a palm tree that birds can sit in.
+- With several ponds on the page, fishing birds spread out over them and move between them.
+- A new toolbar icon: the heron's head in its straw hat, on a round sky badge (16, 32, 48 and 128 px).
+- The storm cloud random event is back with Petty's own animated cloud: now and then it follows one of your pets around for half a minute to a minute.
+- `npm run sprites` draws this new art in code (`scripts/sprites/`). It is Petty's own art and MIT licensed.
+
+### Fixed
+
+- A bird could hang in the air in its flying animation when the window got smaller while it flew to a spot.
+- A heron at the edge of a pond could strike at fish in the grass; it now faces the middle of the pond.
+- A pet could show the wrong animation when it asked for two animations in a row and the first one finished loading last.
+
 ## [2.1.0] - 2026-10-07
 
 First public release.

@@ -21,6 +21,64 @@
     }
 
     /**
+     * Flight for birds that are in the air or perched. No gravity: a bird either flies
+     * straight to `pet.flightTarget` or cruises sideways toward its `pet.cruiseY` height.
+     */
+    function stepFlight(pet, species, { settings, viewport }) {
+      const { width, height } = entitySize(pet, species, settings.petSize);
+      if (pet.isPerched) {
+        pet.velocity.x = 0;
+        pet.velocity.y = 0;
+        return;
+      }
+
+      const sizeRatio = settings.petSize / DISPLAY.DEFAULT_PET_SIZE;
+      const flySpeed =
+        sizeRatio *
+        SPEED.BASE_SPEED *
+        (species.flySpeed || species.speed * 2 || 1) *
+        settings.speedMultiplier *
+        (pet.flightBoost || 1);
+
+      const target = pet.flightTarget;
+      if (target) {
+        const dx = target.x - pet.position.x;
+        const dy = target.y - pet.position.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance <= flySpeed) {
+          pet.position.x = target.x;
+          pet.position.y = target.y;
+          pet.velocity.x = 0;
+          pet.velocity.y = 0;
+        } else {
+          pet.velocity.x = (dx / distance) * flySpeed;
+          pet.velocity.y = (dy / distance) * flySpeed;
+        }
+        if (Math.abs(dx) > 1) pet.direction = dx > 0 ? 1 : -1;
+      } else {
+        pet.velocity.x = pet.direction * flySpeed;
+        const cruiseY = pet.cruiseY ?? pet.position.y;
+        const climb = Math.max(-flySpeed * 0.6, Math.min(flySpeed * 0.6, (cruiseY - pet.position.y) * 0.02));
+        pet.velocity.y = climb;
+      }
+
+      pet.position.x += pet.velocity.x;
+      pet.position.y += pet.velocity.y;
+
+      // Turn around at the edges of the window, and never leave it
+      const maxX = viewport.width - width;
+      const maxY = viewport.height - height;
+      if (pet.position.x <= 0) {
+        pet.position.x = 0;
+        if (!target) pet.direction = 1;
+      } else if (pet.position.x >= maxX) {
+        pet.position.x = maxX;
+        if (!target) pet.direction = -1;
+      }
+      pet.position.y = Math.max(0, Math.min(maxY, pet.position.y));
+    }
+
+    /**
      * Advances one pet by one physics tick. Mutates `pet` in place.
      * @param {object} pet - Global pet state (position, velocity, direction, isMoving, ...)
      * @param {object} species - Species definition from the catalog
@@ -28,6 +86,12 @@
      */
     function stepPet(pet, species, { settings, viewport }) {
       if (pet.isDragging || !species) return;
+
+      const capabilities = species.capabilities || [];
+      if (capabilities.includes(CAPABILITIES.FLYING) && (pet.isAirborne || pet.isPerched)) {
+        stepFlight(pet, species, { settings, viewport });
+        return;
+      }
 
       // Speed calculation matching macOS formula:
       // speed = (petSize / defaultSize) * baseSpeed * species.speed * speedMultiplier
@@ -40,15 +104,19 @@
       const maxY = viewport.height - height;
 
       const isStationary = !pet.isMoving;
-      const isSleepingPlace = species.capabilities?.includes(CAPABILITIES.SLEEPING_PLACE);
-      // Wall crawlers and sleeping places ignore gravity and stick to the bottom edge
-      const isWallCrawler = species.capabilities?.includes(CAPABILITIES.WALL_CRAWLER);
+      // Wall crawlers, sleeping places, trees and ponds ignore gravity and stick to the bottom edge
+      const sticksToBottom = [
+        CAPABILITIES.WALL_CRAWLER,
+        CAPABILITIES.SLEEPING_PLACE,
+        CAPABILITIES.PERCHING_PLACE,
+        CAPABILITIES.FISHING_SPOT,
+      ].some((capability) => capabilities.includes(capability));
 
-      if (!isWallCrawler && !isSleepingPlace && pet.position.y < maxY) {
+      if (!sticksToBottom && pet.position.y < maxY) {
         pet.velocity.y += gravity;
       }
 
-      if (isWallCrawler || isSleepingPlace) {
+      if (sticksToBottom) {
         pet.position.y = maxY;
         pet.velocity.y = 0;
       }
@@ -113,6 +181,6 @@
       };
     }
 
-    globalScope.PettyPhysics = { stepPet, entitySize, createStepper };
+    globalScope.PettyPhysics = { stepPet, stepFlight, entitySize, createStepper };
   }
 })();

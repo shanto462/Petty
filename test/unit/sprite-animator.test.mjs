@@ -44,6 +44,15 @@ test('only requests frames that exist', async () => {
   assert.equal(anim.currentAnimation, 'walk');
 });
 
+test('the newest animation wins, even when an older one finishes loading later', async () => {
+  const anim = animator();
+  await anim.setAnimation('walk');
+  const slow = anim.setAnimation('eat'); // Still loading its frames...
+  const back = anim.setAnimation('walk'); // ...when the pet already went back to walking
+  await Promise.all([slow, back]);
+  assert.equal(anim.currentAnimation, 'walk');
+});
+
 test('the first update shows frame 0 immediately', async () => {
   const anim = animator();
   await anim.setAnimation('walk');

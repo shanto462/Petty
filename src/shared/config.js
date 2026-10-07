@@ -89,6 +89,67 @@
     };
 
     /**
+     * Bird Constants
+     * Used by the bird brain (content/bird-brain.js) and flight physics
+     */
+    const BIRDS = {
+      CRUISE_MIN: 6000, // Shortest flight before a bird picks something to do (ms)
+      CRUISE_MAX: 14000,
+      PERCH_MIN: 12000, // How long a bird sits on a tree (ms)
+      PERCH_MAX: 28000,
+      GROUND_MIN: 6000, // How long a bird hops around on the ground (ms)
+      GROUND_MAX: 14000,
+      SING_MIN: 4000, // Pause between songs while perched (ms)
+      SING_MAX: 10000,
+      ALTITUDE_MIN: 0.08, // Cruising height range, as a fraction of the window height
+      ALTITUDE_MAX: 0.45,
+      HOVER_HEIGHT: 95, // How far above the water a fishing bird hovers (px)
+      DIVE_BOOST: 2.6, // Dive speed compared to normal flight
+      MAX_DESCENT: 0.7, // Steepest glide down to a landing spot (rise over run, about 35 degrees)
+      MAX_CLIMB: 1.4, // Steepest climb up to a perch (about 55 degrees)
+      MAX_TILT: 25, // How far a flying bird leans into a climb or a descent (degrees)
+      MAX_PASSING_TIME: 20000, // A flight or a dive taking longer than this is stuck: start over (ms)
+      CATCH_CHANCE: 0.7, // Chance that a dive catches a fish
+      FEET: { x: 0.5, y: 0.98 }, // Where the feet are in a bird sprite (fractions)
+      WATERLINE: 0.8, // Water line in the splash sprite (fraction of its height)
+      WALK_MIN: 1500, // Walking between two ground actions (ms)
+      WALK_MAX: 4000,
+      WADE_MIN: 15000, // How long a wading bird stays in the pond (ms)
+      WADE_MAX: 30000,
+      STRIKE_MIN: 2500, // Waiting between two strikes at fish (ms)
+      STRIKE_MAX: 6000,
+      WADE_CATCH_CHANCE: 0.55,
+      STORM_MIN: 9000, // How long a storm flight lasts (ms)
+      STORM_MAX: 15000,
+      STORM_SPEED: 0.65, // Flight speed in a storm compared to calm weather
+    };
+
+    /**
+     * Storm Cloud
+     * The small rain cloud that trails a pet (content/storm-cloud.js): over a heron in a storm
+     * flight, and over any pet in the storm cloud random event
+     */
+    const STORM_CLOUD = {
+      SPRITE: 'effect_storm', // effect_storm-<n>.png, Petty's own art
+      FRAMES: 16,
+      FPS: 8,
+      WIDTH: 150,
+      HEIGHT: 105,
+      EVENT_MIN: 30000, // How long the random event follows a pet (ms)
+      EVENT_MAX: 60000,
+    };
+
+    /**
+     * Random Events
+     * The UFO uses a Bit Therapy sprite (ufo_front-0.png), which Petty does not ship until the
+     * author's permission is granted (see NOTICE.md), so it is off.
+     */
+    const RANDOM_EVENTS = {
+      UFO_ABDUCTION: false,
+      STORM_CLOUD: true,
+    };
+
+    /**
      * Species Data Constants
      * Configuration for species loading and management
      */
@@ -97,7 +158,7 @@
       ASSETS_PATH: 'assets/sprites/', // Path to pet sprite assets (relative to the extension root)
       EFFECT_SPRITES: {
         UFO: 'ufo_front-0.png', // UFO abduction random event
-        CLOUD: 'fantozzi_front-0.png', // Fantozzi rain cloud random event
+        CLOUD: 'effect_storm-0.png', // Storm cloud random event (first frame; see STORM_CLOUD)
       },
 
       // Fallback image paths for species thumbnails
@@ -222,6 +283,13 @@
       LEAVES_POOP_STAINS: 'LeavesPoopStains',
       ROTATING: 'Rotating',
       AUTO_RESPAWN: 'AutoRespawn',
+      FLYING: 'Flying', // Birds: flies without gravity (see content/bird-brain.js)
+      PERCHES: 'PerchesOnTrees', // Birds that sit on trees
+      FISHES: 'FishesInPonds', // Birds that dive into ponds for fish
+      WADES: 'WadesInPonds', // Birds that stand in ponds and strike at fish
+      STORMS: 'FliesInStorms', // Birds that sometimes fly under a storm cloud
+      PERCHING_PLACE: 'PerchingPlace', // Trees: birds sit on its perches
+      FISHING_SPOT: 'FishingSpot', // Ponds: fishing birds dive here
     };
 
     // Assign to global scope
@@ -231,6 +299,9 @@
       SPEED,
       DEFAULT_SETTINGS,
       ANIMATION,
+      BIRDS,
+      STORM_CLOUD,
+      RANDOM_EVENTS,
       SPECIES,
       TAG_EMOJI,
       LOG,

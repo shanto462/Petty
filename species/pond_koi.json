@@ -1,0 +1,23 @@
+{
+  "animations": [
+    {
+      "id": "front",
+      "position": "fromEntityBottomLeft",
+      "size": [4.4, 1.44]
+    }
+  ],
+  "capabilities": ["AnimatedSprite", "AnimationsProvider", "AutoRespawn", "PetsSpritesProvider", "FishingSpot"],
+  "dragPath": "front",
+  "fps": 4,
+  "zIndex": -110,
+  "tags": ["water", "decorations"],
+  "id": "pond_koi",
+  "movementPath": "front",
+  "speed": 0,
+  "water": {
+    "x": 0.5,
+    "y": 0.833,
+    "rx": 0.355,
+    "ry": 0.132
+  }
+}

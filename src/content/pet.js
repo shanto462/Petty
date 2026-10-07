@@ -54,6 +54,13 @@
         this.isSleeping = false; // For SleepingPlace interaction
         this.sleepingPlaceEnabled = true; // Cooldown for SleepingPlace capability
 
+        // Flying birds: read by the flight physics, set by the bird brain
+        this.isAirborne = false;
+        this.isPerched = false;
+        this.flightTarget = null;
+        this.cruiseY = null;
+        this.flightBoost = 1;
+
         // Track last rendered position to avoid unnecessary DOM updates
         this.lastRenderedX = null;
         this.lastRenderedY = null;
@@ -62,6 +69,7 @@
         this.element = null;
         this.img = null;
         this.animator = new SpriteAnimator(speciesId, speciesData);
+        this.brain = this.hasCapability(CAPABILITIES.FLYING) && window.BirdBrain ? new BirdBrain(this) : null;
         this.debugBubble = null; // Debug bubble element
 
         // Event handlers (store references for proper cleanup)
@@ -132,7 +140,9 @@
         this.updatePosition();
 
         // Start with appropriate animation
-        if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0) {
+        if (this.brain) {
+          this.brain.start();
+        } else if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0) {
           this.setAnimation(this.movementPath);
         } else {
           this.setAnimation(DEFAULT_ANIMATIONS.FRONT);
@@ -170,8 +180,8 @@
 
         const frames = await this.animator.setAnimation(animationId);
 
-        // The pet may have been removed while its frames were loading
-        if (!this.element || !this.animator) return;
+        // The pet may have been removed, or asked for another animation, while its frames were loading
+        if (!this.element || !this.animator || this.currentAnimation !== animationId) return;
 
         // Immediately display the first frame if available
         if (this.img && frames && frames.length > 0) {
@@ -286,8 +296,14 @@
           this.img.src = result.frame;
         }
 
+        // Birds decide for themselves what comes after an animation
+        if (this.brain) {
+          if (result && result.status === 'completed') this.brain.onAnimationComplete(this.currentAnimation);
+          this.brain.update();
+        }
+
         // If animation completed, return to movement and schedule next animation
-        if (result && result.status === 'completed') {
+        if (result && result.status === 'completed' && !this.brain) {
           logger.log(LOG.PREFIXES.PET, this.speciesId, 'animation completed after', result.loops, 'loops');
 
           // Wake up if sleeping
@@ -534,11 +550,13 @@
         const threshold = 0.5;
         const xChanged = this.lastRenderedX === null || Math.abs(this.position.x - this.lastRenderedX) >= threshold;
         const yChanged = this.lastRenderedY === null || Math.abs(this.position.y - this.lastRenderedY) >= threshold;
+        const rotation = this.hasCapability(CAPABILITIES.ROTATING) && this.rotation !== 0 ? this.rotation : 0;
+        // A bird leveling out after landing turns without moving
+        const rotationChanged = Math.abs(rotation - (this.lastRenderedRotation ?? 0)) >= 0.1;
 
-        if (!xChanged && !yChanged) return; // Skip update if position hasn't meaningfully changed
+        if (!xChanged && !yChanged && !rotationChanged) return; // Skip update if nothing meaningfully changed
 
         // Use CSS transform for better performance than left/top
-        const rotation = this.hasCapability(CAPABILITIES.ROTATING) && this.rotation !== 0 ? this.rotation : 0;
         const scale = this.element.scale || 1.0;
 
         // Single transform update (more efficient than multiple style changes)
@@ -547,6 +565,7 @@
         // Track last rendered position
         this.lastRenderedX = this.position.x;
         this.lastRenderedY = this.position.y;
+        this.lastRenderedRotation = rotation;
 
         // Update debug bubble position if exists
         if (DEBUG.SHOW_ACTION_BUBBLES) {
@@ -608,6 +627,7 @@
         };
         this.velocity = { x: 0, y: 0 };
         this.element.classList.add(DISPLAY.DRAGGING_CLASS);
+        this.brain?.onDragStart();
         this.setAnimation(this.dragPath);
         e.preventDefault();
         e.stopPropagation();
@@ -648,7 +668,9 @@
         }).catch(() => {}); // Ignore errors
 
         // Resume movement
-        if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0) {
+        if (this.brain) {
+          this.brain.onDrop();
+        } else if (this.hasCapability(CAPABILITIES.LINEAR_MOVEMENT) && this.speed > 0) {
           this.setAnimation(this.movementPath);
         } else {
           this.setAnimation(DEFAULT_ANIMATIONS.FRONT);
@@ -683,6 +705,8 @@
           this.angryTimer = null;
         }
 
+        this.brain?.destroy(); // Removes a storm cloud, if any
+
         // Remove debug bubble
         if (this.debugBubble) {
           this.debugBubble.remove();
@@ -705,6 +729,7 @@
         // Clear references
         this.img = null;
         this.animator = null;
+        this.brain = null;
 
         logger.log(LOG.PREFIXES.PET, this.speciesId, 'destroyed');
       }

@@ -1,0 +1,23 @@
+{
+  "animations": [
+    {
+      "id": "front",
+      "position": "fromEntityBottomLeft",
+      "size": [5.6, 1.2]
+    }
+  ],
+  "capabilities": ["AnimatedSprite", "AnimationsProvider", "AutoRespawn", "PetsSpritesProvider", "FishingSpot"],
+  "dragPath": "front",
+  "fps": 4,
+  "zIndex": -110,
+  "tags": ["water", "decorations"],
+  "id": "pond_marsh",
+  "movementPath": "front",
+  "speed": 0,
+  "water": {
+    "x": 0.5,
+    "y": 0.8,
+    "rx": 0.375,
+    "ry": 0.167
+  }
+}

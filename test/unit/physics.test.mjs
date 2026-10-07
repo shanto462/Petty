@@ -83,6 +83,61 @@ test('animation-specific sizes are used for collisions', () => {
   assert.equal(pet.position.y, world.viewport.height - 150);
 });
 
+const bird = { speed: 0.7, flySpeed: 3, capabilities: ['LinearMovement', 'Flying'] };
+const flySpeed = (species, boost = 1) =>
+  ctx.PettyConfig.SPEED.BASE_SPEED * species.flySpeed * world.settings.speedMultiplier * boost;
+
+test('a flying bird ignores gravity and heads for its target', () => {
+  const pet = makePet({ isAirborne: true, flightTarget: { x: 400, y: 0 } });
+  stepPet(pet, bird, world);
+  assert.equal(pet.position.x, 400);
+  assert.ok(pet.position.y < 100, 'it climbs toward the target instead of falling');
+  assert.ok(Math.abs(pet.velocity.y + flySpeed(bird)) < 1e-9);
+});
+
+test('a flying bird lands exactly on a target within one step', () => {
+  const pet = makePet({ isAirborne: true, flightTarget: { x: 401, y: 101 } });
+  stepPet(pet, bird, world);
+  assert.deepEqual({ ...pet.position }, { x: 401, y: 101 });
+  assert.deepEqual({ ...pet.velocity }, { x: 0, y: 0 });
+});
+
+test('a diving bird flies faster', () => {
+  const pet = makePet({ isAirborne: true, flightTarget: { x: 400, y: 500 }, flightBoost: 2 });
+  stepPet(pet, bird, world);
+  assert.ok(Math.abs(pet.velocity.y - flySpeed(bird, 2)) < 1e-9);
+});
+
+test('a cruising bird turns around at the edge of the window', () => {
+  const maxX = world.viewport.width - DISPLAY.DEFAULT_PET_SIZE;
+  const pet = makePet({ isAirborne: true, position: { x: maxX - 0.1, y: 100 }, direction: 1, cruiseY: 100 });
+  stepPet(pet, bird, world);
+  assert.equal(pet.position.x, maxX);
+  assert.equal(pet.direction, -1);
+  assert.equal(pet.position.y, 100, 'it keeps its height');
+});
+
+test('a perched bird stays where it is', () => {
+  const pet = makePet({ isPerched: true, velocity: { x: 3, y: 3 } });
+  stepPet(pet, bird, world);
+  assert.deepEqual({ ...pet.position }, { x: 400, y: 100 });
+  assert.deepEqual({ ...pet.velocity }, { x: 0, y: 0 });
+});
+
+test('a bird on the ground walks and falls like any pet', () => {
+  const pet = makePet();
+  stepPet(pet, bird, world);
+  assert.equal(pet.velocity.y, PHYSICS.GRAVITY);
+});
+
+for (const capability of ['PerchingPlace', 'FishingSpot']) {
+  test(`${capability} scenery sticks to the bottom edge`, () => {
+    const pet = makePet({ position: { x: 400, y: 10 }, currentSize: { width: 150, height: 225 } });
+    stepPet(pet, { speed: 0, capabilities: [capability] }, world);
+    assert.equal(pet.position.y, world.viewport.height - 225);
+  });
+}
+
 test('the stepper runs one step per elapsed interval, whatever the timer rate', () => {
   let now = 0;
   const advance = ctx.PettyPhysics.createStepper({ stepMs: 16, maxCatchUpMs: 1000, now: () => now });

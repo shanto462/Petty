@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { CATALOG_FILE, generateCatalogSource } from '../../scripts/lib/catalog.mjs';
+import {
+  CATALOG_FILE,
+  DISABLED_SOURCES,
+  generateCatalogSource,
+  readSpecies,
+  shippedSprites,
+} from '../../scripts/lib/catalog.mjs';
 import { SHARED, SRC, loadScripts } from './helpers.mjs';
 
 const ctx = loadScripts(SHARED, { chrome: { runtime: { getURL: (p) => p } } });
@@ -40,11 +46,57 @@ test('random event sprites exist', () => {
   }
 });
 
+test('species from disabled sources stay out of the catalog', async () => {
+  const all = await readSpecies(undefined, { includeDisabled: true });
+  const disabled = all.filter((s) => DISABLED_SOURCES.has(s.source));
+  assert.ok(disabled.length > 0, 'the Bit Therapy species are still in the repository');
+  for (const { id } of disabled) assert.equal(species[id], undefined, `${id} must not be in the catalog`);
+  assert.equal(ctx.SPECIES_LIST.length, all.length - disabled.length);
+});
+
+test('the build ships only sprites of enabled species and Petty’s own effects', async () => {
+  const shipped = await shippedSprites();
+  for (const [id, counts] of Object.entries(frames)) {
+    for (const [animation, count] of Object.entries(counts)) {
+      for (let i = 0; i < count; i++) assert.ok(shipped.has(`${id}_${animation}-${i}.png`), `${id}_${animation}-${i}`);
+    }
+  }
+  assert.ok(shipped.has('effect_storm-0.png'));
+  for (const file of [
+    'cat_walk-0.png',
+    'cat_black_walk-0.png',
+    'ufo_front-0.png',
+    'fantozzi_front-0.png',
+    'Sprite-0001.png',
+  ]) {
+    assert.equal(shipped.has(file), false, `${file} must stay out of the build`);
+  }
+});
+
+test('a random event can only be on when its sprite ships', async () => {
+  const shipped = await shippedSprites();
+  const { RANDOM_EVENTS, SPECIES } = ctx.PettyConfig;
+  const sprites = { UFO_ABDUCTION: SPECIES.EFFECT_SPRITES.UFO, STORM_CLOUD: SPECIES.EFFECT_SPRITES.CLOUD };
+  for (const [event, on] of Object.entries(RANDOM_EVENTS)) {
+    if (on) assert.ok(shipped.has(sprites[event]), `${event} is on, but ${sprites[event]} is not shipped`);
+  }
+});
+
+test('every frame of the storm cloud exists', () => {
+  const { ASSETS_PATH } = ctx.PettyConfig.SPECIES;
+  const { SPRITE, FRAMES } = ctx.PettyConfig.STORM_CLOUD;
+  for (let i = 0; i < FRAMES; i++) {
+    const file = path.join(SRC, ASSETS_PATH, `${SPRITE}-${i}.png`);
+    assert.ok(existsSync(file), `${ASSETS_PATH}${SPRITE}-${i}.png is missing`);
+  }
+  assert.ok(!existsSync(path.join(SRC, ASSETS_PATH, `${SPRITE}-${FRAMES}.png`)), 'FRAMES matches the files');
+});
+
 test('SpeciesManager exposes frame counts and thumbnails from the catalog', async () => {
   const manager = ctx.SpeciesManager.getInstance();
   await manager.loadAllSpecies();
-  assert.equal(manager.getFrameCount('cat', 'walk'), frames.cat.walk);
-  assert.equal(manager.getFrameCount('cat', 'does-not-exist'), 0);
-  assert.equal(manager.getThumbnailUrl('cat'), 'assets/sprites/cat_walk-0.png');
+  assert.equal(manager.getFrameCount('sparrow', 'walk'), frames.sparrow.walk);
+  assert.equal(manager.getFrameCount('sparrow', 'does-not-exist'), 0);
+  assert.equal(manager.getThumbnailUrl('sparrow'), 'assets/sprites/sparrow_walk-0.png');
   assert.equal(manager.hasSpecies('toString'), false);
 });

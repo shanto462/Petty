@@ -13,12 +13,20 @@ export const CATALOG_FILE = path.join(ROOT, 'src', 'shared', 'catalog.js');
 const FRAME_FILE = /^(.+)-(\d+)\.png$/;
 
 /**
- * Reads every species definition, sorted by id.
+ * Art Petty may not ship yet. Species whose JSON has one of these as its "source" stay in the
+ * repository, but the catalog and the build leave them out, so the extension never shows them.
+ * Bit Therapy art waits for its author's permission (see NOTICE.md). Remove a source from this
+ * list to turn its species back on.
+ */
+export const DISABLED_SOURCES = new Set(['bit-therapy']);
+
+/**
+ * Reads every enabled species definition (or all of them), sorted by id.
  * @returns {Promise<Array<object>>}
  */
-export async function readSpecies(speciesDir = SPECIES_DIR) {
+export async function readSpecies(speciesDir = SPECIES_DIR, { includeDisabled = false } = {}) {
   const files = (await readdir(speciesDir)).filter((f) => f.endsWith('.json')).sort();
-  return Promise.all(
+  const species = await Promise.all(
     files.map(async (file) => {
       const data = JSON.parse(await readFile(path.join(speciesDir, file), 'utf8'));
       const id = path.basename(file, '.json');
@@ -28,6 +36,33 @@ export async function readSpecies(speciesDir = SPECIES_DIR) {
       return data;
     }),
   );
+  return includeDisabled ? species : species.filter((s) => !DISABLED_SOURCES.has(s.source));
+}
+
+/**
+ * Finds which species a sprite file belongs to. Longest id first, so "cat_black_walk"
+ * resolves to cat_black, not cat.
+ * @returns {(base: string) => string | undefined}
+ */
+function ownerOf(speciesIds) {
+  const ids = [...speciesIds].sort((a, b) => b.length - a.length);
+  return (base) => ids.find((candidate) => base.startsWith(`${candidate}_`));
+}
+
+/**
+ * Sprite files the extension ships: frames of enabled species and Petty's own effects
+ * (`effect_*`). Frames of disabled species and loose files stay out of the build.
+ * @returns {Promise<Set<string>>} File names in the sprite folder
+ */
+export async function shippedSprites({ speciesDir = SPECIES_DIR, spritesDir = SPRITES_DIR } = {}) {
+  const owner = ownerOf((await readSpecies(speciesDir, { includeDisabled: true })).map((s) => s.id));
+  const enabled = new Set((await readSpecies(speciesDir)).map((s) => s.id));
+  const files = new Set();
+  for (const file of await readdir(spritesDir)) {
+    const base = FRAME_FILE.exec(file)?.[1];
+    if (base && (enabled.has(owner(base)) || base.startsWith('effect_'))) files.add(file);
+  }
+  return files;
 }
 
 /**
@@ -35,17 +70,18 @@ export async function readSpecies(speciesDir = SPECIES_DIR) {
  * Sprite files are named `<speciesId>_<animationId>-<frame>.png`.
  * @returns {Promise<Record<string, Record<string, number>>>}
  */
-export async function countFrames(speciesIds, spritesDir = SPRITES_DIR) {
-  // Longest id first so "cat_black_walk" resolves to cat_black, not cat.
-  const ids = [...speciesIds].sort((a, b) => b.length - a.length);
+export async function countFrames(speciesIds, spritesDir = SPRITES_DIR, allIds = speciesIds) {
+  // Owners are found among all species, so a disabled cat_black never lends frames to cat
+  const owner = ownerOf(allIds);
+  const wanted = new Set(speciesIds);
   const indexes = {};
 
   for (const file of await readdir(spritesDir)) {
     const match = FRAME_FILE.exec(file);
     if (!match) continue;
     const [, base, frame] = match;
-    const id = ids.find((candidate) => base.startsWith(`${candidate}_`));
-    if (!id) continue;
+    const id = owner(base);
+    if (!wanted.has(id)) continue;
     const animation = base.slice(id.length + 1);
     ((indexes[id] ??= {})[animation] ??= new Set()).add(Number(frame));
   }
@@ -67,9 +103,11 @@ export async function countFrames(speciesIds, spritesDir = SPRITES_DIR) {
  */
 export async function generateCatalogSource({ speciesDir = SPECIES_DIR, spritesDir = SPRITES_DIR } = {}) {
   const species = await readSpecies(speciesDir);
+  const allIds = (await readSpecies(speciesDir, { includeDisabled: true })).map((s) => s.id);
   const frames = await countFrames(
     species.map((s) => s.id),
     spritesDir,
+    allIds,
   );
 
   const speciesEntries = species.map((s) => `    ${JSON.stringify(s.id)}: ${JSON.stringify(s)}`).join(',\n');

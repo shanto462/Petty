@@ -209,6 +209,9 @@
           localPet.isSleeping = globalPet.isSleeping;
         }
 
+        // Birds work out from the new position whether they are perched, on the ground or flying
+        localPet.brain?.resync(globalPet.currentAnimation);
+
         localPet.updatePosition();
       });
     }
@@ -229,6 +232,7 @@
       pet.direction = petData.direction || 1;
       pet.isMoving = petData.isMoving ?? false;
       this.pets.push(pet);
+      pet.brain?.resync(petData.currentAnimation);
       this.ensureUpdateLoop();
 
       this.logger.log('[PetManager] Created synced pet:', petData.species);

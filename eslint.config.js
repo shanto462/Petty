@@ -4,6 +4,7 @@ import globals from 'globals';
 // Extension files are classic scripts that share globals across files
 // (the manifest and popup.html load them in order), not ES modules.
 const extensionGlobals = {
+  BirdBrain: 'readonly',
   ChromeMessaging: 'readonly',
   CloudEvent: 'readonly',
   EphemeralEntity: 'readonly',
@@ -12,6 +13,7 @@ const extensionGlobals = {
   RandomEventScheduler: 'readonly',
   SpeciesManager: 'readonly',
   SpriteAnimator: 'readonly',
+  StormCloud: 'readonly',
   UfoAbductionEvent: 'readonly',
 };
 
