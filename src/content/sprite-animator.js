@@ -25,6 +25,7 @@
         this.lastReturnedFrame = null; // Track last frame to avoid redundant updates
         this.decodedImages = {}; // Keep decoded images alive for instant rendering
         this.forcedLoops = null; // For SleepingPlace capability to force specific loop count
+        this.latestRequest = 0; // Only the newest setAnimation call may switch the animation
       }
 
       /**
@@ -68,10 +69,14 @@
       }
 
       async setAnimation(animationId) {
+        const request = ++this.latestRequest;
         if (this.currentAnimation === animationId) return this.frames[animationId];
 
         // Load frames first before changing animation
         const frames = await this.loadAnimation(animationId);
+
+        // A newer request came in while these frames loaded: it wins, even if it finished first
+        if (request !== this.latestRequest) return null;
 
         if (!frames || frames.length === 0) {
           return null;

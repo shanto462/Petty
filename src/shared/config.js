@@ -105,9 +105,34 @@
       ALTITUDE_MAX: 0.45,
       HOVER_HEIGHT: 95, // How far above the water a fishing bird hovers (px)
       DIVE_BOOST: 2.6, // Dive speed compared to normal flight
+      MAX_DESCENT: 0.7, // Steepest glide down to a landing spot (rise over run, about 35 degrees)
+      MAX_CLIMB: 1.4, // Steepest climb up to a perch (about 55 degrees)
+      MAX_TILT: 25, // How far a flying bird leans into a climb or a descent (degrees)
+      MAX_PASSING_TIME: 20000, // A flight or a dive taking longer than this is stuck: start over (ms)
       CATCH_CHANCE: 0.7, // Chance that a dive catches a fish
       FEET: { x: 0.5, y: 0.98 }, // Where the feet are in a bird sprite (fractions)
       WATERLINE: 0.8, // Water line in the splash sprite (fraction of its height)
+      WALK_MIN: 1500, // Walking between two ground actions (ms)
+      WALK_MAX: 4000,
+      WADE_MIN: 15000, // How long a wading bird stays in the pond (ms)
+      WADE_MAX: 30000,
+      STRIKE_MIN: 2500, // Waiting between two strikes at fish (ms)
+      STRIKE_MAX: 6000,
+      WADE_CATCH_CHANCE: 0.55,
+      STORM_MIN: 9000, // How long a storm flight lasts (ms)
+      STORM_MAX: 15000,
+      STORM_SPEED: 0.65, // Flight speed in a storm compared to calm weather
+      STORM_CLOUD: { SPRITE: 'effect_storm', FRAMES: 16, FPS: 8, WIDTH: 150, HEIGHT: 105 },
+    };
+
+    /**
+     * Random Events
+     * Both use Bit Therapy sprites (ufo_front-0.png and fantozzi_front-0.png), which Petty does
+     * not ship until the author's permission is granted (see NOTICE.md), so both are off.
+     */
+    const RANDOM_EVENTS = {
+      UFO_ABDUCTION: false,
+      RAIN_CLOUD: false,
     };
 
     /**
@@ -244,8 +269,11 @@
       LEAVES_POOP_STAINS: 'LeavesPoopStains',
       ROTATING: 'Rotating',
       AUTO_RESPAWN: 'AutoRespawn',
-      FLYING: 'Flying', // Birds: flies without gravity, perches on trees
+      FLYING: 'Flying', // Birds: flies without gravity (see content/bird-brain.js)
+      PERCHES: 'PerchesOnTrees', // Birds that sit on trees
       FISHES: 'FishesInPonds', // Birds that dive into ponds for fish
+      WADES: 'WadesInPonds', // Birds that stand in ponds and strike at fish
+      STORMS: 'FliesInStorms', // Birds that sometimes fly under a storm cloud
       PERCHING_PLACE: 'PerchingPlace', // Trees: birds sit on its perches
       FISHING_SPOT: 'FishingSpot', // Ponds: fishing birds dive here
     };
@@ -258,6 +286,7 @@
       DEFAULT_SETTINGS,
       ANIMATION,
       BIRDS,
+      RANDOM_EVENTS,
       SPECIES,
       TAG_EMOJI,
       LOG,

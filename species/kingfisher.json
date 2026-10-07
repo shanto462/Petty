@@ -40,7 +40,9 @@
     "FlipHorizontallyWhenGoingLeft",
     "LinearMovement",
     "PetsSpritesProvider",
+    "Rotating",
     "Flying",
+    "PerchesOnTrees",
     "FishesInPonds"
   ],
   "dragPath": "drag",

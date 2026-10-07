@@ -180,8 +180,8 @@
 
         const frames = await this.animator.setAnimation(animationId);
 
-        // The pet may have been removed while its frames were loading
-        if (!this.element || !this.animator) return;
+        // The pet may have been removed, or asked for another animation, while its frames were loading
+        if (!this.element || !this.animator || this.currentAnimation !== animationId) return;
 
         // Immediately display the first frame if available
         if (this.img && frames && frames.length > 0) {
@@ -550,11 +550,13 @@
         const threshold = 0.5;
         const xChanged = this.lastRenderedX === null || Math.abs(this.position.x - this.lastRenderedX) >= threshold;
         const yChanged = this.lastRenderedY === null || Math.abs(this.position.y - this.lastRenderedY) >= threshold;
+        const rotation = this.hasCapability(CAPABILITIES.ROTATING) && this.rotation !== 0 ? this.rotation : 0;
+        // A bird leveling out after landing turns without moving
+        const rotationChanged = Math.abs(rotation - (this.lastRenderedRotation ?? 0)) >= 0.1;
 
-        if (!xChanged && !yChanged) return; // Skip update if position hasn't meaningfully changed
+        if (!xChanged && !yChanged && !rotationChanged) return; // Skip update if nothing meaningfully changed
 
         // Use CSS transform for better performance than left/top
-        const rotation = this.hasCapability(CAPABILITIES.ROTATING) && this.rotation !== 0 ? this.rotation : 0;
         const scale = this.element.scale || 1.0;
 
         // Single transform update (more efficient than multiple style changes)
@@ -563,6 +565,7 @@
         // Track last rendered position
         this.lastRenderedX = this.position.x;
         this.lastRenderedY = this.position.y;
+        this.lastRenderedRotation = rotation;
 
         // Update debug bubble position if exists
         if (DEBUG.SHOW_ACTION_BUBBLES) {
@@ -701,6 +704,8 @@
           clearTimeout(this.angryTimer);
           this.angryTimer = null;
         }
+
+        this.brain?.destroy(); // Removes a storm cloud, if any
 
         // Remove debug bubble
         if (this.debugBubble) {

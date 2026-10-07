@@ -8,7 +8,7 @@
   const globalScope = typeof window !== 'undefined' ? window : self;
 
   if (!globalScope.RandomEventScheduler) {
-    const { LOG, MESSAGE_TYPES } = globalScope.PettyConfig || {};
+    const { LOG, MESSAGE_TYPES, RANDOM_EVENTS } = globalScope.PettyConfig || {};
     const logger = globalScope.PettyLogger || { log: () => {}, warn: () => {}, error: () => {} };
 
     const ALARM_NAME = 'petty-random-event';
@@ -27,8 +27,8 @@
 
         // Available events
         this.events = [
-          { name: 'UFO Abduction', type: MESSAGE_TYPES.TRIGGER_UFO_ABDUCTION },
-          { name: 'Fantozzi Cloud', type: MESSAGE_TYPES.TRIGGER_CLOUD_EVENT },
+          { name: 'UFO Abduction', type: MESSAGE_TYPES.TRIGGER_UFO_ABDUCTION, flag: 'UFO_ABDUCTION' },
+          { name: 'Fantozzi Cloud', type: MESSAGE_TYPES.TRIGGER_CLOUD_EVENT, flag: 'RAIN_CLOUD' },
         ];
       }
 
@@ -77,7 +77,14 @@
           return;
         }
 
-        const randomEvent = this.events[Math.floor(Math.random() * this.events.length)];
+        // Read at trigger time, so an event can be switched on without a new scheduler
+        const events = this.events.filter((event) => RANDOM_EVENTS?.[event.flag]);
+        if (events.length === 0) {
+          logger.log(LOG.PREFIXES.BACKGROUND, 'No random events are switched on, skipping');
+          return;
+        }
+
+        const randomEvent = events[Math.floor(Math.random() * events.length)];
         logger.log(LOG.PREFIXES.BACKGROUND, 'Triggering random event:', randomEvent.name);
 
         // Only one tab runs the event; its changes (e.g. an abducted pet) reach the others

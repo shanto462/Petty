@@ -3,7 +3,7 @@
     {
       "id": "front",
       "position": "fromEntityBottomLeft",
-      "size": [3, 0.8]
+      "size": [4.8, 1.12]
     }
   ],
   "capabilities": ["AnimatedSprite", "AnimationsProvider", "AutoRespawn", "PetsSpritesProvider", "FishingSpot"],
@@ -14,5 +14,10 @@
   "id": "pond",
   "movementPath": "front",
   "speed": 0,
-  "water": { "x": 0.5, "y": 0.78, "rx": 0.36, "ry": 0.15 }
+  "water": {
+    "x": 0.5,
+    "y": 0.78,
+    "rx": 0.37,
+    "ry": 0.17
+  }
 }

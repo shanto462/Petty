@@ -11,7 +11,7 @@ import { minify as minifyCss } from 'csso';
 import { zipSync } from 'fflate';
 import { minify as minifyHtml } from 'html-minifier-terser';
 import { minify as minifyJs } from 'terser';
-import { CATALOG_FILE, ROOT, generateCatalogSource } from './lib/catalog.mjs';
+import { CATALOG_FILE, ROOT, generateCatalogSource, shippedSprites } from './lib/catalog.mjs';
 import { manifestFiles } from './lib/manifest.mjs';
 
 const SRC = path.join(ROOT, 'src');
@@ -78,12 +78,20 @@ if ((await readFile(CATALOG_FILE, 'utf8')) !== (await generateCatalogSource())) 
 
 await rm(DIST, { recursive: true, force: true });
 
+// Only sprites of enabled species (and Petty's own effects) go into the build
+const sprites = await shippedSprites();
+let skippedSprites = 0;
+
 let sourceBytes = 0;
 let outputBytes = 0;
 const zipEntries = {};
 
 for await (const file of walk(SRC)) {
   const rel = path.relative(SRC, file).split(path.sep).join('/');
+  if (rel.startsWith('assets/sprites/') && !sprites.has(path.basename(rel))) {
+    skippedSprites++;
+    continue;
+  }
   const dest = path.join(OUT, rel);
   await mkdir(path.dirname(dest), { recursive: true });
 
@@ -117,6 +125,7 @@ await writeFile(zipPath, zip);
 const mb = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 console.log(`[build] Petty ${pkg.version}`);
 console.log(`[build] ${Object.keys(zipEntries).length} files, ${mb(sourceBytes)} -> ${mb(outputBytes)}`);
+console.log(`[build] Left out ${skippedSprites} sprites of disabled species (see scripts/lib/catalog.mjs)`);
 console.log(`[build] Unpacked: ${path.relative(ROOT, OUT)}/`);
 console.log(`[build] Zip:      ${path.relative(ROOT, zipPath)} (${mb(zip.length)})`);
 console.log(`[build] Done in ${((Date.now() - started) / 1000).toFixed(1)}s`);

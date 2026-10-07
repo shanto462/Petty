@@ -1,11 +1,9 @@
-// Trees and a pond for Petty. Trees are perches for birds; the pond is where they fish.
+// Trees for Petty (birds perch on them) and the heron's storm cloud. Ponds are in ponds.mjs.
 
 import { Canvas, inEllipse, segmentDistance, seeded, shade } from './pixel.mjs';
 
 export const TREE_WIDTH = 100;
 export const TREE_HEIGHT = 150;
-export const POND_WIDTH = 150;
-export const POND_HEIGHT = 40;
 
 export const TREES = {
   oak: {
@@ -158,183 +156,68 @@ export function drawTree(tree, sway = 0) {
   return out;
 }
 
-/** Fractions of the pond sprite: the water's center and half-size, for the fishing birds. */
-export const POND_WATER = { x: 0.5, y: 0.78, rx: 0.36, ry: 0.15 };
-
-const GRASS = '#5fb04a';
-const GRASS_DARK = '#4c9a3a';
-const GRASS_LIGHT = '#6cc04f';
+export const STORM_WIDTH = 100;
+export const STORM_HEIGHT = 70;
+export const STORM_FRAMES = 16;
+const LIGHTNING_FRAMES = new Set([5, 6, 13]);
 
 /**
- * A small pond set into the ground, seen from a low angle like the rest of the scene:
- * a flat oval of water, the far bank showing behind it, a thin strip of grass in front,
- * and a flat bottom edge that sits on the bottom of the window.
- * @param {number} frame - 0 to 7, moves the shimmer and the fish shadow
+ * A small dark storm cloud with rain falling from it. Lightning shows in a few frames only,
+ * as a bolt under the cloud (the cloud itself never flashes).
+ * @param {number} frame - 0 to STORM_FRAMES - 1
  */
-export function drawPond(frame) {
-  const random = seeded(23);
-  const cx = POND_WIDTH * POND_WATER.x;
-  const cy = POND_HEIGHT * POND_WATER.y;
-  const rx = POND_WIDTH * POND_WATER.rx;
-  const ry = POND_HEIGHT * POND_WATER.ry;
-  const pond = new Canvas(POND_WIDTH, POND_HEIGHT);
-  const water = (px, py, inset = 0) => inEllipse(px, py, cx, cy, rx - inset, ry - inset * 0.25);
-
-  // Ground: a wide, low mound of grass whose bottom is cut flat by the ground line
-  pond.fill((x, y) => {
+export function drawStormCloud(frame) {
+  const random = seeded(41);
+  const puffs = [
+    [50, 22, 16],
+    [32, 26, 12],
+    [68, 25, 13],
+    [20, 30, 8],
+    [82, 30, 9],
+    [42, 15, 11],
+    [60, 14, 10],
+  ];
+  const cloud = new Canvas(STORM_WIDTH, STORM_HEIGHT).fill((x, y) => {
     const px = x + 0.5;
     const py = y + 0.5;
-    if (!inEllipse(px, py, cx, POND_HEIGHT - 2, rx + 18, ry + 11)) return null;
-    if (y >= POND_HEIGHT - 2) return GRASS_DARK; // A little shadow where it meets the ground
-    return (x * 3 + y * 7) % 11 === 0 ? GRASS_DARK : GRASS;
-  });
-
-  // Far bank: the earth slope behind the water, which a low view still sees
-  pond.fill((x, y) => {
-    const px = x + 0.5;
-    const py = y + 0.5;
-    if (py > cy || water(px, py) || !inEllipse(px, py, cx, cy - 1.6, rx + 1.5, ry + 1.2)) return null;
-    return py < cy - ry ? '#a07c50' : '#8b6a43';
-  });
-
-  // Water: lighter far away where it mirrors the sky, deeper close by
-  pond.fill((x, y) => {
-    const px = x + 0.5;
-    const py = y + 0.5;
-    if (!water(px, py)) return null;
-    const depth = (py - (cy - ry)) / (ry * 2); // 0 at the far edge, 1 at the near edge
-    if (depth < 0.22) return '#8fd3f2';
-    if (depth < 0.5) return '#5fb6d6';
-    if (depth < 0.8) return '#3f93c2';
-    return '#2f78aa';
-  });
-
-  // Near edge: grass hangs over the water a little
-  for (let x = 0; x < POND_WIDTH; x++) {
-    for (let y = Math.floor(cy); y < POND_HEIGHT; y++) {
-      if (water(x + 0.5, y + 0.5) && !water(x + 0.5, y + 1.5)) {
-        pond.set(x, y, (x * 5) % 7 < 3 ? GRASS_LIGHT : GRASS);
-        break;
-      }
+    if (py > 36) return null; // Flat bottom
+    let lit = null;
+    for (const [cx, cy, r] of puffs) {
+      if (!inEllipse(px, py, cx, cy, r, r * 0.9)) continue;
+      lit = Math.max(lit ?? -Infinity, (cy - r * 0.5 - py) / r + (cx - px) * 0.01);
     }
+    if (lit === null) return null;
+    const level = lit + (random() - 0.5) * 0.2;
+    if (py > 33) return '#3e444f';
+    if (level > 0.25) return '#8a93a1';
+    if (level > -0.2) return '#6b7482';
+    return '#545c69';
+  });
+  cloud.outline('#2b3038', 0);
+
+  const out = new Canvas(STORM_WIDTH, STORM_HEIGHT);
+  // Rain: slanted streaks that fall a little further each frame
+  for (let i = 0; i < 22; i++) {
+    const x0 = 16 + ((i * 29) % 70);
+    const y0 = 38 + ((i * 17 + frame * 5) % 32);
+    for (let k = 0; k < 4; k++) out.set(Math.round(x0 - (y0 + k - 38) * 0.25), y0 + k, k === 0 ? '#c4d6e8' : '#7f9fbe');
   }
-
-  // Fish shadow swimming in a slow loop, flattened by the low view
-  const angle = (frame / 8) * Math.PI * 2;
-  const fx = cx + Math.cos(angle) * rx * 0.45;
-  const fy = cy + Math.sin(angle) * ry * 0.3 + 0.5;
-  const facing = -Math.sin(angle) >= 0 ? 1 : -1;
-  for (let y = 0; y < POND_HEIGHT; y++) {
-    for (let x = 0; x < POND_WIDTH; x++) {
-      const px = x + 0.5;
-      const py = y + 0.5;
-      const tailX = fx - facing * 4;
-      const body = inEllipse(px, py, fx, fy, 3.2, 0.9);
-      const tail = Math.abs(px - tailX) < 1.3 && Math.abs(py - fy) < 1.2 - Math.abs(px - tailX) * 0.5;
-      if ((body || tail) && water(px, py, 3)) pond.set(x, y, '#2a6694');
-    }
+  if (LIGHTNING_FRAMES.has(frame)) {
+    const bolt = [
+      [56, 36],
+      [50, 46],
+      [56, 47],
+      [47, 60],
+      [50, 52],
+      [44, 52],
+    ];
+    const zigzag = new Canvas(STORM_WIDTH, STORM_HEIGHT).fill((x, y) => {
+      const p = [x + 0.5, y + 0.5];
+      for (let i = 0; i < bolt.length - 1; i++) if (segmentDistance(...p, bolt[i], bolt[i + 1]) < 0.8) return '#fffbe0';
+      return null;
+    });
+    out.draw(zigzag.outline('#f2c94c', 0));
   }
-
-  // Shimmer: short light lines drifting across the water
-  const shimmers = [
-    [-0.55, -0.1],
-    [0.1, -0.35],
-    [0.45, 0.25],
-    [-0.2, 0.45],
-    [0.62, -0.15],
-  ];
-  shimmers.forEach(([sx, sy], i) => {
-    const phase = (frame + i * 3) % 8;
-    if (phase > 4) return;
-    const x0 = Math.round(cx + sx * rx + phase * 1.5);
-    const y0 = Math.round(cy + sy * ry);
-    const len = [2, 4, 6, 4, 2][phase];
-    for (let k = 0; k < len; k++) {
-      if (water(x0 + k + 0.5, y0 + 0.5, 2)) pond.set(x0 + k, y0, phase === 2 ? '#ffffff' : '#c6ecfa');
-    }
-  });
-
-  // Lily pads lie flat on the water (one with a pink flower)
-  const pads = [
-    [cx - rx * 0.55, cy + ry * 0.2, 4.5],
-    [cx + rx * 0.3, cy + ry * 0.45, 3.5],
-    [cx + rx * 0.66, cy - ry * 0.25, 3],
-  ];
-  pads.forEach(([px0, py0, r], i) => {
-    const bob = (frame + i * 2) % 8 < 4 ? 0 : 1;
-    for (let y = 0; y < POND_HEIGHT; y++) {
-      for (let x = 0; x < POND_WIDTH; x++) {
-        const px = x + 0.5 - bob * (i % 2 ? -0.5 : 0.5);
-        const py = y + 0.5;
-        if (!inEllipse(px, py, px0, py0, r, r * 0.32)) continue;
-        if (px > px0 + 0.5 && Math.abs(py - py0) < 0.6) continue; // The notch
-        pond.set(x, y, py < py0 ? '#7ccf5c' : '#4f9e3a');
-      }
-    }
-    if (i === 0) {
-      const fxp = Math.round(px0 - 1);
-      const fyp = Math.round(py0 - 1);
-      pond.set(fxp - 1, fyp, '#f6a6c8');
-      pond.set(fxp, fyp, '#ffd84a');
-      pond.set(fxp + 1, fyp, '#f6a6c8');
-      pond.set(fxp, fyp - 1, '#fbd0e1');
-    }
-  });
-
-  // Stones on the near bank, half in the grass
-  const stones = [
-    [cx - rx * 0.92, cy + ry + 1.2, 3.4],
-    [cx - rx * 0.7, cy + ry + 2.4, 2.3],
-    [cx + rx * 0.82, cy + ry + 1.4, 3],
-  ];
-  for (const [sx, sy, r] of stones) {
-    for (let y = 0; y < POND_HEIGHT; y++) {
-      for (let x = 0; x < POND_WIDTH; x++) {
-        const py = y + 0.5;
-        if (inEllipse(x + 0.5, py, sx, sy, r, r * 0.6)) pond.set(x, y, py < sy - r * 0.15 ? '#c4bfb4' : '#8e887d');
-      }
-    }
-  }
-
-  // Grass tufts poking up along the top edge of the mound
-  for (let i = 0; i < 30; i++) {
-    const x = Math.floor(random() * POND_WIDTH);
-    for (let y = 0; y < POND_HEIGHT - 1; y++) {
-      if (pond.isSet(x, y) && !pond.isSet(x, y - 1)) {
-        pond.set(x, y - 1, GRASS_DARK);
-        if (random() > 0.5) pond.set(x, y - 2, GRASS_LIGHT);
-        break;
-      }
-    }
-  }
-
-  // Reeds and cattails standing on the far bank and the sides, swaying a little
-  const reeds = [
-    [cx - rx - 3, 16, true],
-    [cx - rx + 1, 12, false],
-    [cx - rx - 7, 10, false],
-    [cx - rx + 5, 8, false],
-    [cx + rx - 4, 14, true],
-    [cx + rx + 1, 11, false],
-    [cx + rx + 5, 8, false],
-    [cx + rx * 0.2, 6, false],
-  ];
-  reeds.forEach(([x0, h, cattail], i) => {
-    const lean = (frame + i) % 8 < 4 ? 0 : i % 2 ? 1 : -1;
-    const base = Math.round(cy - ry + 1);
-    for (let k = 0; k < h; k++) {
-      const x = Math.round(x0 + (k > h * 0.6 ? lean : 0));
-      pond.set(x, base - k, k > h - 3 && !cattail ? '#8fd16a' : '#3f8a34');
-    }
-    if (cattail) {
-      const x = Math.round(x0 + lean);
-      for (let k = 0; k < 4; k++) {
-        pond.set(x, base - h + 1 + k, '#7a4a28');
-        pond.set(x + 1, base - h + 1 + k, '#5e3820');
-      }
-      pond.set(x, base - h, '#3f8a34');
-    }
-  });
-
-  return pond.outline('#2d5a26', 0);
+  out.draw(cloud);
+  return out;
 }

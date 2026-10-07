@@ -40,13 +40,13 @@ test('keeps an existing alarm when the worker restarts', async () => {
 
 test('adds a pet, broadcasts it, and saves the roster and live state', async () => {
   const { chrome } = startWorker();
-  const response = await send(chrome, { type: 'ADD_PET', species: 'cat' });
+  const response = await send(chrome, { type: 'ADD_PET', species: 'sparrow' });
   assert.equal(response.success, true);
-  assert.equal(response.pet.species, 'cat');
+  assert.equal(response.pet.species, 'sparrow');
   assert.match(response.pet.id, /^[0-9a-f-]{36}$/);
 
   await settle();
-  assert.deepEqual(chrome.data[KEY], [{ id: response.pet.id, species: 'cat' }]);
+  assert.deepEqual(chrome.data[KEY], [{ id: response.pet.id, species: 'sparrow' }]);
   assert.equal(chrome.sessionData[STATES_KEY][0].id, response.pet.id);
   assert.ok(chrome.sent.some(({ message }) => message.type === 'PET_ADDED'));
 });
@@ -62,7 +62,7 @@ test('rejects unknown species and malformed messages', async () => {
 
 test('answers every known message so callers never see a closed channel', async () => {
   const { chrome } = startWorker();
-  const { pet } = await send(chrome, { type: 'ADD_PET', species: 'cat' });
+  const { pet } = await send(chrome, { type: 'ADD_PET', species: 'sparrow' });
   for (const message of [
     { type: 'UPDATE_VIEWPORT', viewport: { width: 1280, height: 720 } },
     { type: 'UPDATE_PET_POSITION', petId: pet.id, position: { x: 10, y: 20 } },
@@ -76,7 +76,7 @@ test('answers every known message so callers never see a closed channel', async 
 
 test('stores positions reported by the visible tab', async () => {
   const { chrome } = startWorker();
-  const { pet } = await send(chrome, { type: 'ADD_PET', species: 'cat' });
+  const { pet } = await send(chrome, { type: 'ADD_PET', species: 'sparrow' });
   await send(chrome, {
     type: 'REPORT_PET_STATES',
     states: [
@@ -95,20 +95,24 @@ test('stores positions reported by the visible tab', async () => {
 
 test('ignores state fields a tab must not change', async () => {
   const { chrome } = startWorker();
-  const { pet } = await send(chrome, { type: 'ADD_PET', species: 'cat' });
-  await send(chrome, { type: 'UPDATE_PET_STATE', petId: pet.id, state: { species: 'trex', id: 'x', isMoving: false } });
+  const { pet } = await send(chrome, { type: 'ADD_PET', species: 'sparrow' });
+  await send(chrome, {
+    type: 'UPDATE_PET_STATE',
+    petId: pet.id,
+    state: { species: 'bluebird', id: 'x', isMoving: false },
+  });
   const { pets } = await send(chrome, { type: 'GET_GLOBAL_PETS' });
-  assert.equal(pets[0].species, 'cat');
+  assert.equal(pets[0].species, 'sparrow');
   assert.equal(pets[0].id, pet.id);
   assert.equal(pets[0].isMoving, false);
 });
 
 test('removes one pet or all pets', async () => {
   const { chrome } = startWorker();
-  const { pet } = await send(chrome, { type: 'ADD_PET', species: 'cat' });
-  await send(chrome, { type: 'ADD_PET', species: 'frog' });
+  const { pet } = await send(chrome, { type: 'ADD_PET', species: 'sparrow' });
+  await send(chrome, { type: 'ADD_PET', species: 'robin' });
   await send(chrome, { type: 'REMOVE_PET', petId: pet.id });
-  assert.deepEqual(speciesOf((await send(chrome, { type: 'GET_GLOBAL_PETS' })).pets), ['frog']);
+  assert.deepEqual(speciesOf((await send(chrome, { type: 'GET_GLOBAL_PETS' })).pets), ['robin']);
   await send(chrome, { type: 'REMOVE_ALL_PETS' });
   assert.equal((await send(chrome, { type: 'GET_GLOBAL_PETS' })).pets.length, 0);
 });
@@ -117,8 +121,8 @@ test('restores saved pets, including the older full-state format, and drops unkn
   const { chrome } = startWorker({
     stored: {
       [KEY]: [
-        { id: 'abc123def', species: 'cat', position: { x: 1, y: 2 }, velocity: { x: 0, y: 0 } },
-        { id: 'b', species: 'frog' },
+        { id: 'abc123def', species: 'sparrow', position: { x: 1, y: 2 }, velocity: { x: 0, y: 0 } },
+        { id: 'b', species: 'robin' },
         { id: 'c', species: 'no-such-pet' },
         'garbage',
       ],
@@ -128,24 +132,36 @@ test('restores saved pets, including the older full-state format, and drops unkn
   assert.deepEqual(
     Array.from(pets, (p) => [p.id, p.species]),
     [
-      ['abc123def', 'cat'],
-      ['b', 'frog'],
+      ['abc123def', 'sparrow'],
+      ['b', 'robin'],
     ],
   );
 });
 
 test('a restarted worker resumes positions from session storage', async () => {
   const { chrome } = startWorker({
-    stored: { [KEY]: [{ id: 'p1', species: 'cat' }] },
-    session: { [STATES_KEY]: [{ id: 'p1', species: 'cat', position: { x: 500, y: 600 }, direction: -1 }] },
+    stored: { [KEY]: [{ id: 'p1', species: 'sparrow' }] },
+    session: { [STATES_KEY]: [{ id: 'p1', species: 'sparrow', position: { x: 500, y: 600 }, direction: -1 }] },
   });
   const { pets } = await send(chrome, { type: 'GET_GLOBAL_PETS' });
   assert.deepEqual({ ...pets[0].position }, { x: 500, y: 600 });
   assert.equal(pets[0].direction, -1);
 });
 
-test('random events go only to the active tab, and only when pets exist', async () => {
+test('random events stay off while their Bit Therapy art is disabled', async () => {
   const { chrome } = startWorker();
+  await send(chrome, { type: 'ADD_PET', species: 'sparrow' });
+  chrome.sent.length = 0;
+  chrome.alarmListeners[0]({ name: 'petty-random-event' });
+  await settle();
+  await settle();
+  assert.equal(chrome.sent.filter(({ message }) => message.type.startsWith('TRIGGER_')).length, 0);
+  assert.ok(chrome.scheduled.has('petty-random-event'), 'the alarm keeps running');
+});
+
+test('random events go only to the active tab, and only when pets exist', async () => {
+  const { chrome, ctx } = startWorker();
+  Object.assign(ctx.PettyConfig.RANDOM_EVENTS, { UFO_ABDUCTION: true, RAIN_CLOUD: true });
   const [onAlarm] = chrome.alarmListeners;
 
   onAlarm({ name: 'petty-random-event' });
@@ -153,7 +169,7 @@ test('random events go only to the active tab, and only when pets exist', async 
   await settle();
   assert.equal(chrome.sent.filter(({ message }) => message.type.startsWith('TRIGGER_')).length, 0, 'no pets, no event');
 
-  await send(chrome, { type: 'ADD_PET', species: 'cat' });
+  await send(chrome, { type: 'ADD_PET', species: 'sparrow' });
   chrome.sent.length = 0;
   onAlarm({ name: 'petty-random-event' });
   await settle();

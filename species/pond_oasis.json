@@ -1,0 +1,40 @@
+{
+  "animations": [
+    {
+      "id": "front",
+      "position": "fromEntityBottomLeft",
+      "size": [4.4, 2.4]
+    }
+  ],
+  "capabilities": [
+    "AnimatedSprite",
+    "AnimationsProvider",
+    "AutoRespawn",
+    "PetsSpritesProvider",
+    "FishingSpot",
+    "PerchingPlace"
+  ],
+  "dragPath": "front",
+  "fps": 4,
+  "zIndex": -110,
+  "tags": ["water", "decorations"],
+  "id": "pond_oasis",
+  "movementPath": "front",
+  "speed": 0,
+  "water": {
+    "x": 0.5,
+    "y": 0.9,
+    "rx": 0.318,
+    "ry": 0.075
+  },
+  "perches": [
+    {
+      "x": 0.358,
+      "y": 0.263
+    },
+    {
+      "x": 0.485,
+      "y": 0.258
+    }
+  ]
+}

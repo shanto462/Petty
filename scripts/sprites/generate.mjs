@@ -1,10 +1,12 @@
-// Draws Petty's own pixel art (birds, trees, pond) and writes the frames to src/assets/sprites.
+// Draws Petty's own pixel art (birds, heron, trees, pond, storm cloud) and writes the frames to src/assets/sprites.
 // Usage: npm run sprites (then npm run generate to refresh the catalog)
 
-import { readdir, rm, writeFile } from 'node:fs/promises';
+import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { BIRDS, drawBird, drawSplash } from './birds.mjs';
-import { drawPond, drawTree, TREES } from './scenery.mjs';
+import { heronAnimations } from './heron-animations.mjs';
+import { drawPond, palmPerches, PONDS } from './ponds.mjs';
+import { drawStormCloud, drawTree, STORM_FRAMES, TREES } from './scenery.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const SPRITES_DIR = path.join(ROOT, 'src', 'assets', 'sprites');
@@ -187,15 +189,48 @@ const SPECIES = {
   kingfisher: birdAnimations(BIRDS.kingfisher, { fisher: true }),
   tree_oak: { front: [0, 1, 0, -1].map((sway) => drawTree(TREES.oak, sway)) },
   tree_cherry: { front: [0, 1, 0, -1].map((sway) => drawTree(TREES.cherry, sway)) },
-  pond: { front: [0, 1, 2, 3, 4, 5, 6, 7].map((frame) => drawPond(frame)) },
+  ...Object.fromEntries(
+    Object.entries(PONDS).map(([id, style]) => [
+      id,
+      { front: [0, 1, 2, 3, 4, 5, 6, 7].map((f) => drawPond(style, f)) },
+    ]),
+  ),
+  heron: heronAnimations(),
+  // Not a pet: the storm cloud that follows the heron (effect_storm-<n>.png)
+  effect: { storm: Array.from({ length: STORM_FRAMES }, (_, frame) => drawStormCloud(frame)) },
 };
 
-const existing = await readdir(SPRITES_DIR);
+// The birds aim at the numbers in species/<pond>.json, so they must match the art
+const PET_SIZE = 50; // Sprite pixels in one pet size (a pet is 75 px on screen)
+const mismatches = [];
+for (const [id, style] of Object.entries(PONDS)) {
+  const species = JSON.parse(await readFile(path.join(ROOT, 'species', `${id}.json`), 'utf8'));
+  const expected = {
+    size: [+(style.width / PET_SIZE).toFixed(3), +(style.height / PET_SIZE).toFixed(3)],
+    water: style.water,
+    ...(style.features.includes('palm') && { perches: palmPerches(style) }),
+  };
+  const actual = { size: species.animations[0].size, water: species.water, perches: species.perches };
+  for (const [key, value] of Object.entries(expected)) {
+    if (JSON.stringify(actual[key]) !== JSON.stringify(value)) {
+      mismatches.push(`species/${id}.json: "${key}" should be ${JSON.stringify(value)}`);
+    }
+  }
+}
+if (mismatches.length > 0) {
+  console.error(mismatches.join('\n'));
+  process.exit(1);
+}
+
+// Remove old frames first, so a shorter animation does not keep stale extra frames.
+// A file belongs to the longest matching id, so cleaning "pond" leaves "pond_koi" alone.
+const ids = Object.keys(SPECIES).sort((a, b) => b.length - a.length);
+const ownerOf = (file) => ids.find((id) => new RegExp(`^${id}_[a-z_]+-\\d+\\.png$`).test(file));
+const stale = (await readdir(SPRITES_DIR)).filter((file) => ownerOf(file));
+await Promise.all(stale.map((file) => rm(path.join(SPRITES_DIR, file))));
+
 let written = 0;
 for (const [id, animations] of Object.entries(SPECIES)) {
-  // Remove old frames first, so a shorter animation does not keep stale extra frames
-  const prefix = new RegExp(`^${id}_[a-z_]+-\\d+\\.png$`);
-  await Promise.all(existing.filter((f) => prefix.test(f)).map((f) => rm(path.join(SPRITES_DIR, f))));
   for (const [animation, frames] of Object.entries(animations)) {
     await Promise.all(
       frames.map((canvas, i) => writeFile(path.join(SPRITES_DIR, `${id}_${animation}-${i}.png`), canvas.toPng())),

@@ -27,7 +27,9 @@
     "FlipHorizontallyWhenGoingLeft",
     "LinearMovement",
     "PetsSpritesProvider",
-    "Flying"
+    "Rotating",
+    "Flying",
+    "PerchesOnTrees"
   ],
   "dragPath": "drag",
   "fps": 12,
