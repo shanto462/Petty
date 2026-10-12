@@ -40,7 +40,7 @@
   ],
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.0",
     "csso": "^5.0.5",
     "csso-cli": "^4.0.2",
     "eslint": "^10.12.0",
